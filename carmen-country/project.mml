@@ -1,0 +1,52 @@
+{
+  "bounds": [
+    -180,
+    -85.0511,
+    180,
+    85.0511
+  ],
+  "center": [
+    0,
+    0,
+    6
+  ],
+  "format": "png8:c=8",
+  "interactivity": {
+    "layer": "data",
+    "template_teaser": "Name: {{name}}<br/>\nSearch terms: {{search}}<br/>\nLon: {{lon}}<br/>\nLat: {{lat}}",
+    "fields": [
+      "name",
+      "search"
+    ]
+  },
+  "minzoom": 6,
+  "maxzoom": 6,
+  "srs": "+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0.0 +k=1.0 +units=m +nadgrids=@null +wktext +no_defs +over",
+  "Stylesheet": [
+    "style.mss"
+  ],
+  "Layer": [
+    {
+      "geometry": "polygon",
+      "Datasource": {
+        "type": "sqlite",
+        "file": "layers/countries.sqlite",
+        "table": "data",
+        "attachdb": "",
+        "extent": "",
+        "id": "data",
+        "project": "carmen-country",
+        "srs": null
+      },
+      "id": "data",
+      "class": "",
+      "srs-name": "900913",
+      "srs": "+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0.0 +k=1.0 +units=m +nadgrids=@null +wktext +no_defs +over",
+      "name": "data"
+    }
+  ],
+  "name": "carmen-country",
+  "description": "",
+  "legend": "",
+  "attribution": ""
+}
