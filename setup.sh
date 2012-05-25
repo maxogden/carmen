@@ -15,7 +15,7 @@ do
     DIR=`dirname $file`
     mkdir -p $DIR
     echo "Downloading $BASE..."
-    curl -s -o $file "https://s3.amazonaws.com/mapbox/carmen-data/$BASE"
+    curl -s -o $file "http://s3.amazonaws.com/mapbox/carmen-data/$BASE"
   fi
 done
 
