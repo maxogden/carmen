@@ -48,6 +48,7 @@ places = Points(
             'city',
             'town',
             'village',
+            'hamlet'
         ),
     },
     fields = (
@@ -56,6 +57,7 @@ places = Points(
             'city',
             'town',
             'village',
+            'hamlet'
         ])),
         ('population', Integer()),
     ),

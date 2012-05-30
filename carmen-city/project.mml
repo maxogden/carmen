@@ -13,12 +13,13 @@
   "format": "png8:c=64",
   "interactivity": {
     "layer": "data",
-    "template_teaser": "Name: {{name}}<br/>\nSearch terms: {{search}}<br/>\nLon: {{lon}}<br/>\nLat: {{lat}}<br/>\nRank: {{rank}}",
+    "template_teaser": "<pre>Name: {{name}}\nSearch terms: {{search}}\nLon: {{lon}}\nLat: {{lat}}\nType: {{type}}\nRank: {{rank}}",
     "fields": [
       "name",
       "search",
       "lon",
       "lat",
+      "type",
       "rank"
     ]
   },
@@ -33,8 +34,8 @@
       "geometry": "point",
       "Datasource": {
         "type": "sqlite",
-        "file": "layers/places.sqlite",
-        "table": "(SELECT *, z_order*1e9 + COALESCE(population,0) AS rank FROM data WHERE z_order >= 3 AND name <> '' ORDER BY rank DESC)",
+        "file": "layers/places-big.sqlite",
+        "table": "(SELECT *, z_order*1e9 + COALESCE(population,0) AS rank FROM data WHERE name <> '' ORDER BY rank DESC)",
         "attachdb": "",
         "extent": "",
         "id": "data",
