@@ -4,6 +4,7 @@ mkdir -p tiles
 
 data=(
   "carmen-city/layers/places.sqlite"
+  "carmen-city/layers/places-big.sqlite"
   "carmen-country/layers/countries.sqlite"
   "carmen-province/layers/provinces.sqlite"
 )
