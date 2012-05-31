@@ -13,10 +13,12 @@
   "format": "png8:c=64",
   "interactivity": {
     "layer": "data",
-    "template_teaser": "<pre>Name: {{name}}\nSearch terms: {{search}}\nType: {{type}}\nRank: {{rank}}",
+    "template_teaser": "<pre>Name: {{name}}\nSearch terms: {{search}}\nLon: {{lon}}\nLat: {{lat}}\nType: {{type}}\nRank: {{rank}}</pre>",
     "fields": [
       "name",
       "search",
+      "lon",
+      "lat",
       "type",
       "rank"
     ]
