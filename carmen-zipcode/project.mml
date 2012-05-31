@@ -1,0 +1,55 @@
+{
+  "bounds": [
+    -180,
+    -85.0511,
+    180,
+    85.0511
+  ],
+  "center": [
+    -73.98,
+    40.75,
+    10
+  ],
+  "format": "png8:m=h:c=16",
+  "interactivity": {
+    "layer": "data",
+    "template_teaser": "<pre>Name: {{name}}\nSearch terms: {{search}}\nLon: {{lon}}\nLat: {{lat}}</pre>",
+    "fields": [
+      "name",
+      "search",
+      "lon",
+      "lat"
+    ]
+  },
+  "minzoom": 10,
+  "maxzoom": 10,
+  "srs": "+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0.0 +k=1.0 +units=m +nadgrids=@null +wktext +no_defs +over",
+  "Stylesheet": [
+    "style.mss"
+  ],
+  "Layer": [
+    {
+      "geometry": "polygon",
+      "Datasource": {
+        "type": "sqlite",
+        "file": "layers/zipcodes.sqlite",
+        "table": "(SELECT zipcode AS name, zipcode AS search, * FROM data) AS data",
+        "attachdb": "",
+        "extent": "",
+        "id": "data",
+        "project": "carmen-zipcode",
+        "srs": null
+      },
+      "id": "data",
+      "class": "",
+      "srs-name": "900913",
+      "srs": "+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0.0 +k=1.0 +units=m +nadgrids=@null +wktext +no_defs +over",
+      "name": "data"
+    }
+  ],
+  "name": "carmen-zipcode",
+  "description": "",
+  "legend": "",
+  "attribution": "",
+  "_basemap": "http://a.tiles.mapbox.com/v3/mapbox.mapbox-streets.jsonp"
+}
