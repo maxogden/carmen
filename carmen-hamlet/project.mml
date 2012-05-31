@@ -32,7 +32,7 @@
       "geometry": "point",
       "Datasource": {
         "type": "sqlite",
-        "file": "layers/places.sqlite",
+        "file": "layers/hamlets.sqlite",
         "table": "(SELECT *, z_order*1e9 + COALESCE(population,0) AS rank FROM data WHERE name <> '' ORDER BY rank DESC)",
         "attachdb": "",
         "extent": "",
@@ -47,7 +47,7 @@
       "name": "data"
     }
   ],
-  "name": "carmen-city",
+  "name": "carmen-hamlet",
   "description": "",
   "legend": "",
   "attribution": "",
