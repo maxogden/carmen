@@ -50,5 +50,6 @@
   "name": "carmen-country",
   "description": "",
   "legend": "",
-  "attribution": ""
+  "attribution": "",
+  "_basemap": "http://a.tiles.mapbox.com/v3/mapbox.mapbox-light.jsonp"
 }

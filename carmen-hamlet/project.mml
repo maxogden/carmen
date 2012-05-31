@@ -51,5 +51,5 @@
   "description": "",
   "legend": "",
   "attribution": "",
-  "_basemap": "http://a.tiles.mapbox.com/v3/mapbox.mapbox-streets.jsonp"
+  "_basemap": "http://a.tiles.mapbox.com/v3/mapbox.mapbox-light.jsonp"
 }
