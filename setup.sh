@@ -6,6 +6,7 @@ data=(
   "carmen-city/layers/places.sqlite"
   "carmen-country/layers/countries.sqlite"
   "carmen-province/layers/provinces.sqlite"
+  "carmen-zipcode/layers/zipcodes.sqlite"
 )
 
 for file in "${data[@]}"

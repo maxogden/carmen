@@ -8,22 +8,23 @@
   "center": [
     -78.3984,
     38.8226,
-    10
+    11
   ],
   "format": "png8:c=64",
   "interactivity": {
     "layer": "data",
-    "template_teaser": "Name: {{name}}<br/>\nSearch terms: {{search}}<br/>\nLon: {{lon}}<br/>\nLat: {{lat}}<br/>\nRank: {{rank}}",
+    "template_teaser": "<pre>Name: {{name}}\nSearch terms: {{search}}\nLon: {{lon}}\nLat: {{lat}}\nType: {{type}}\nRank: {{rank}}</pre>",
     "fields": [
       "name",
       "search",
       "lon",
       "lat",
+      "type",
       "rank"
     ]
   },
-  "minzoom": 10,
-  "maxzoom": 10,
+  "minzoom": 11,
+  "maxzoom": 11,
   "srs": "+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0.0 +k=1.0 +units=m +nadgrids=@null +wktext +no_defs +over",
   "Stylesheet": [
     "style.mss"
@@ -34,7 +35,7 @@
       "Datasource": {
         "type": "sqlite",
         "file": "layers/places.sqlite",
-        "table": "(SELECT *, z_order*1e9 + COALESCE(population,0) AS rank FROM data WHERE z_order >= 3 AND name <> '' ORDER BY rank DESC)",
+        "table": "(SELECT *, z_order*1e9 + COALESCE(population,0) AS rank FROM data WHERE name <> '' ORDER BY rank DESC)",
         "attachdb": "",
         "extent": "",
         "id": "data",
@@ -52,5 +53,5 @@
   "description": "",
   "legend": "",
   "attribution": "",
-  "_basemap": "http://a.tiles.mapbox.com/v3/mapbox.mapbox-streets.jsonp"
+  "_basemap": "http://a.tiles.mapbox.com/v3/mapbox.mapbox-light.jsonp"
 }
