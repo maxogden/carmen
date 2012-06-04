@@ -1,0 +1,52 @@
+{
+  "bounds": [
+    -180,
+    -85.0511,
+    180,
+    85.0511
+  ],
+  "center": [
+    0,
+    0,
+    10
+  ],
+  "format": "png8",
+  "interactivity": {
+    "layer": "data",
+    "template_teaser": "name: {{{name}}} <br/ >\nsearch: {{{search}}} <br/ >\nlon: {{{lon}}} <br/ >\nlat: {{{lat}}}",
+    "fields": [
+      "name",
+      "gid"
+    ]
+  },
+  "minzoom": 0,
+  "maxzoom": 10,
+  "srs": "+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0.0 +k=1.0 +units=m +nadgrids=@null +wktext +no_defs +over",
+  "Stylesheet": [
+    "style.mss"
+  ],
+  "Layer": [
+    {
+      "geometry": "polygon",
+      "Datasource": {
+        "type": "postgis",
+        "table": "(   select  gid,\n            geom_merc,\n            carmen_name as name,\n            carmen_search as search,\n            st_x(st_pointonsurface(geom)) as lon,\n            st_y(st_pointonsurface(geom)) as lat\n    from    gadm2\n    where   geom_merc && !bbox!\n    and     carmen_name is not null\n\n    union all\n\n    select  gid,\n            geom_merc,\n            name,\n            '' as search,\n            st_x(st_pointonsurface(geom)) as lon,\n            st_y(st_pointonsurface(geom)) as lat\n    from    tl_2011_places\n    where   geom_merc && !bbox!\n) as data\n",
+        "extent": "-20037508.34 -20037508.34 20037508.34 20037508.34",
+        "key_field": "gid",
+        "geometry_field": "geom_merc",
+        "dbname": "gis",
+        "host": "localhost"
+      },
+      "id": "data",
+      "class": "",
+      "srs-name": "900913",
+      "srs": "+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0.0 +k=1.0 +units=m +nadgrids=@null +wktext +no_defs +over",
+      "name": "data"
+    }
+  ],
+  "name": "carmen-city",
+  "description": "",
+  "_basemap": "http://a.tiles.mapbox.com/v3/mapbox.mapbox-streets.jsonp",
+  "legend": "",
+  "attribution": ""
+}
