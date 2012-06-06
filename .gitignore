@@ -1,5 +1,5 @@
-/carmen-country/layers
-/carmen-province/layers
-/carmen-city/layers
-/carmen-hamlet/layers
-/carmen-zipcode/layers
+/flickr-places/layers/
+/ne-countries/layers/
+/ne-provinces/layers/
+/osm-places/layers/
+/tiger-zipcodes/layers/
