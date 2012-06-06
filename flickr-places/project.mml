@@ -1,0 +1,53 @@
+{
+  "bounds": [
+    -180,
+    -85.0511,
+    180,
+    85.0511
+  ],
+  "center": [
+    -78,
+    39,
+    11
+  ],
+  "format": "png8:m=h:c=32",
+  "interactivity": {
+    "layer": "data",
+    "template_teaser": "<pre>Name:   {{name}}\nSearch: {{search}}\nLon:    {{lon}}\nLat:    {{lat}}\nArea:   {{area}}</pre>",
+    "fields": [
+      "name",
+      "search",
+      "lon",
+      "lat",
+      "area"
+    ]
+  },
+  "minzoom": 11,
+  "maxzoom": 11,
+  "srs": "+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0.0 +k=1.0 +units=m +nadgrids=@null +wktext +no_defs +over",
+  "Stylesheet": [
+    "style.mss"
+  ],
+  "Layer": [
+    {
+      "geometry": "polygon",
+      "Datasource": {
+        "type": "sqlite",
+        "file": "layers/flickr-places.sqlite",
+        "table": "(SELECT name AS search, * FROM data WHERE area > 1000 ORDER BY area DESC) AS data",
+        "attachdb": "",
+        "extent": ""
+      },
+      "id": "data",
+      "class": "",
+      "srs-name": "900913",
+      "srs": "+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0.0 +k=1.0 +units=m +nadgrids=@null +wktext +no_defs +over",
+      "name": "data"
+    }
+  ],
+  "name": "",
+  "description": "",
+  "_basemap": "http://a.tiles.mapbox.com/v3/mapbox.mapbox-streets.jsonp",
+  "legend": "",
+  "attribution": ""
+}
