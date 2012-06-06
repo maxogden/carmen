@@ -13,7 +13,7 @@
   "format": "png8:c=64",
   "interactivity": {
     "layer": "data",
-    "template_teaser": "<pre>Name:   {{name}}\nSearch: {{search}}\nLon:    {{lon}}\nLat:    {{lat}}\nType:   {{type}}\nRank:   {{rank}}</pre>",
+    "template_teaser": "<pre>Name:   {{name}}\nSearch: {{search}}\nLon:    {{lon}}\nLat:    {{lat}}\nType:   {{type}}\nScore:  {{score}}</pre>",
     "fields": [
       "name",
       "search",
@@ -35,7 +35,7 @@
       "Datasource": {
         "type": "sqlite",
         "file": "layers/osm-places.sqlite",
-        "table": "(SELECT *, z_order*1e9 + COALESCE(population,0) AS rank FROM data WHERE name <> '' ORDER BY rank DESC)",
+        "table": "(SELECT *, z_order*1e9 + COALESCE(population,0) AS score FROM data WHERE name <> '' ORDER BY score DESC)",
         "attachdb": "",
         "extent": "",
         "id": "data",
