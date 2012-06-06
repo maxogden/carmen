@@ -1,43 +1,45 @@
 {
   "bounds": [
     -180,
-    0,
-    -40,
-    75
+    -85.0511,
+    180,
+    85.0511
   ],
   "center": [
-    -73.98,
+    -74,
     40.75,
-    10
+    8
   ],
-  "format": "png8:m=h:c=16",
+  "format": "png8:c=64",
   "interactivity": {
     "layer": "data",
-    "template_teaser": "<pre>Name: {{name}}\nSearch terms: {{search}}\nLon: {{lon}}\nLat: {{lat}}</pre>",
+    "template_teaser": "<pre>Name:   {{name}}\nSearch: {{search}}\nLon:    {{lon}}\nLat:    {{lat}}\nType:   {{type}}\nRank:   {{rank}}</pre>",
     "fields": [
       "name",
       "search",
       "lon",
-      "lat"
+      "lat",
+      "type",
+      "rank"
     ]
   },
-  "minzoom": 10,
-  "maxzoom": 10,
+  "minzoom": 8,
+  "maxzoom": 11,
   "srs": "+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0.0 +k=1.0 +units=m +nadgrids=@null +wktext +no_defs +over",
   "Stylesheet": [
     "style.mss"
   ],
   "Layer": [
     {
-      "geometry": "polygon",
+      "geometry": "point",
       "Datasource": {
         "type": "sqlite",
-        "file": "layers/zipcodes.sqlite",
-        "table": "(SELECT zipcode AS name, zipcode AS search, * FROM data) AS data",
+        "file": "layers/osm-places.sqlite",
+        "table": "(SELECT *, z_order*1e9 + COALESCE(population,0) AS rank FROM data WHERE name <> '' ORDER BY rank DESC)",
         "attachdb": "",
         "extent": "",
         "id": "data",
-        "project": "carmen-zipcode",
+        "project": "osm-places",
         "srs": null
       },
       "id": "data",
@@ -47,9 +49,9 @@
       "name": "data"
     }
   ],
-  "name": "carmen-zipcode",
+  "name": "osm-places",
   "description": "",
   "legend": "",
   "attribution": "",
-  "_basemap": "http://a.tiles.mapbox.com/v3/mapbox.mapbox-streets.jsonp"
+  "_basemap": "http://a.tiles.mapbox.com/v3/mapbox.mapbox-light.jsonp"
 }

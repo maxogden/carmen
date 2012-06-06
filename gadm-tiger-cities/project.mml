@@ -44,7 +44,7 @@
       "name": "data"
     }
   ],
-  "name": "carmen-city",
+  "name": "gadm-tiger-city",
   "description": "",
   "_basemap": "http://a.tiles.mapbox.com/v3/mapbox.mapbox-streets.jsonp",
   "legend": "",

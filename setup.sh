@@ -3,10 +3,11 @@
 mkdir -p tiles
 
 data=(
-  "carmen-city/layers/places.sqlite"
-  "carmen-country/layers/countries.sqlite"
-  "carmen-province/layers/provinces.sqlite"
-  "carmen-zipcode/layers/zipcodes.sqlite"
+  "flickr-places/layers/flickr-places.sqlite"
+  "osm-places/layers/osm-places.sqlite"
+  "ne-countries/layers/ne-countries.sqlite"
+  "ne-provinces/layers/ne-provinces.sqlite"
+  "tiger-zipcodes/layers/tiger-zipcodes.sqlite"
 )
 
 for file in "${data[@]}"
