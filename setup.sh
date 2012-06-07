@@ -7,6 +7,7 @@ data=(
   "osm-places/layers/osm-places.sqlite"
   "ne-countries/layers/ne-countries.sqlite"
   "ne-provinces/layers/ne-provinces.sqlite"
+  "tiger-places/layers/tiger-places.sqlite"
   "tiger-zipcodes/layers/tiger-zipcodes.sqlite"
 )
 
