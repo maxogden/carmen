@@ -24,6 +24,7 @@ body {
   }
 
 #input,
+#config,
 .item,
 .query {
   border-radius:3px;
@@ -35,6 +36,22 @@ body {
   max-height:400px;
   overflow:auto;
   }
+
+#config {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  padding:10px;
+  z-index:1;
+  background:rgba(255,255,255,0.9);
+  box-shadow:rgba(0,0,0,0.25) 0px 0px 5px;
+  text-align: right;
+  }
+#config a.toggle {
+  text-decoration: underline;
+  }
+#config form { display: none; }
+#config.open form { display: block; }
 
 a { text-decoration:none; color:#444; }
 a small { display:block; }
@@ -117,7 +134,11 @@ form .item span { display:block; }
 <script type='text/javascript'>
 window.onload = function() {
 
-var api = _('http://api.tiles.mapbox.com/v3/mapbox/geocode/<%=q%>.jsonp').template();
+var apiTarget = (location.hash.length > 1 ? location.hash.substr(1)  :  'mapbox');
+var api = (function() {
+    var t = _('http://api.tiles.mapbox.com/v3/<%=t%>/geocode/<%=q%>.jsonp').template();
+    return function(query) { return t({t: apiTarget, q: query}); }
+})();
 var term = _("<a class='item' href='#<%=lon%>,<%=lat%>,<%=z%>'><%=name%> (<%=type%>)<% if (obj.context) { %><small><%= _(context).pluck('name').join(', ') %></small><% } %></a>").template();
 var context = _("<a class='item'><%=name%></a>").template();
 
@@ -132,19 +153,19 @@ var tilejson = {
         "http://d.tiles.mapbox.com/v3/mapbox.mapbox-streets/{z}/{x}/{y}.png"
     ]
 };
-var getContext = function() {
+var getContext = _.debounce(function() {
     var center = map.getCenter();
     var lat = parseFloat(center.lat) % 90;
     var lon = parseFloat(center.lon) % 360;
     if (lon > 180) lon -= 360;
     if (lon < -180) lon += 360;
-    $.ajax({ url: api({q: lon +','+ lat}), dataType: 'jsonp', jsonpCallback: 'grid', success: function(resp) {
+    $.ajax({ url: api(lon +','+ lat), dataType: 'jsonp', jsonpCallback: 'grid', success: function(resp) {
             if (!resp.results.length) return $('.context').empty();
             var c = _(resp.results[0]).map(context);
             c.reverse();
             $('.context').html(c.join('<span>▶</span>'));
     }});
-};
+}, 500);
 var getZ = function(type) {
     if (type === 'village') return 14;
     if (type === 'town') return 13;
@@ -183,7 +204,7 @@ $('body').delegate('a.item', 'click', function(ev) {
 });
 $('#input').submit(function(ev) {
     var q = $('#query').val();
-    $.ajax({url: api({q: q}), dataType: 'jsonp', jsonpCallback: 'grid', success: function(resp) {
+    $.ajax({url: api(q), dataType: 'jsonp', jsonpCallback: 'grid', success: function(resp) {
         if (!resp.results.length) {
             $('.results').html("<a class='item'>No matches.</a>");
             return;
@@ -205,6 +226,17 @@ $('#input').submit(function(ev) {
     return false;
 });
 
+$('#endpoint').val(apiTarget);
+$('#advanced').submit(function(ev) {
+    apiTarget = $('#endpoint').val();
+    location.hash = apiTarget;
+    return false;
+});
+$('body').delegate('a.toggle', 'click', function(ev) {
+    $(ev.currentTarget).parents('div.dialog').toggleClass('open');
+    return false;
+});
+
 };
 </script>
 </head>
@@ -221,5 +253,12 @@ $('#input').submit(function(ev) {
     <div class='results'></div>
   </form>
   <div class='context'></div>
+  <div id='config' class='dialog'>
+    <a class='toggle' href='#'>Configure</a>
+    <form id='advanced'>
+        <input id='endpoint' type='text' />
+        <input type='submit' value='Update' />
+    </form>
+  </div>
 </body>
 </html>
