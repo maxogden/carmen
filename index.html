@@ -52,6 +52,7 @@ body {
   }
 #config form { display: none; }
 #config.open form { display: block; }
+#config #advanced { text-align: left; }
 
 a { text-decoration:none; color:#444; }
 a small { display:block; }
@@ -134,7 +135,7 @@ form .item span { display:block; }
 <script type='text/javascript'>
 window.onload = function() {
 
-var apiTarget = (location.hash.length > 1 ? location.hash.substr(1)  :  'mapbox');
+var apiTarget = 'mapbox';
 var api = (function() {
     var t = _('http://api.tiles.mapbox.com/v3/<%=t%>/geocode/<%=q%>.jsonp').template();
     return function(query) { return t({t: apiTarget, q: query}); }
@@ -226,16 +227,33 @@ $('#input').submit(function(ev) {
     return false;
 });
 
-$('#endpoint').val(apiTarget);
-$('#advanced').submit(function(ev) {
-    apiTarget = $('#endpoint').val();
-    location.hash = apiTarget;
+$('body').delegate('#advanced input', 'change', function(ev) {
+    var sources = _($('#advanced input')).chain().map(function(e) {
+        return (e.checked ? e.id : false);
+    }).compact().value();
+
+    if (sources.length) {
+        apiTarget = _(sources).map(function(v) { return 'mapbox.'+ v }).join(',');
+    }
+    else {
+        apiTarget = 'mapbox';
+    }
     return false;
 });
 $('body').delegate('a.toggle', 'click', function(ev) {
     $(ev.currentTarget).parents('div.dialog').toggleClass('open');
     return false;
 });
+
+if (location.hash.length > 7) {
+    var hash =  location.hash.substr(1);
+    _(hash.split(',')).each(function(v) {
+        if (v.indexOf('mapbox' === 0)) {
+            var e = $('#'+v.substr(7));
+            if (e) e.attr('checked', true).change();
+        }
+    });
+}
 
 };
 </script>
@@ -256,8 +274,9 @@ $('body').delegate('a.toggle', 'click', function(ev) {
   <div id='config' class='dialog'>
     <a class='toggle' href='#'>Configure</a>
     <form id='advanced'>
-        <input id='endpoint' type='text' />
-        <input type='submit' value='Update' />
+        <div><input id='osm-places' type='checkbox' /><label for='osm-places'>OSM Places</a></div>
+        <div><input id='flickr-places' type='checkbox' /><label for='flickr-places'>Flickr Places</a></div>
+        <div><input id='tiger-places' type='checkbox' /><label for='tiger-places'>TIGER Places</a></div>
     </form>
   </div>
 </body>
