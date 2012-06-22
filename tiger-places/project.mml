@@ -13,11 +13,12 @@
   "format": "png8:m=h:c=16",
   "interactivity": {
     "layer": "data",
-    "template_teaser": "<pre>Name:   {{name}}\nSearch: {{search}}\nScore:  {{score}}\nType:   {{type}}\nLon:    {{lon}}\nLat:    {{lat}}</pre>",
+    "template_teaser": "<pre>Name:   {{name}}\nSearch: {{search}}\nScore:  {{score}}\nType:   {{type}}\nLon:    {{lon}}\nLat:    {{lat}}\nBounds: {{bounds}}</pre>",
     "fields": [
       "name",
       "search",
       "score",
+      "type",
       "lon",
       "lat"
     ]

@@ -13,7 +13,7 @@
   "format": "png8:m=h:c=16",
   "interactivity": {
     "layer": "data",
-    "template_teaser": "<pre>Name:   {{name}}\nSearch: {{search}}\nLon:    {{lon}}\nLat:    {{lat}}",
+    "template_teaser": "<pre>Name:   {{name}}\nSearch: {{search}}\nPop'n:  {{population}}\nLon:    {{lon}}\nLat:    {{lat}}\nBounds: {{bounds}}</pre>",
     "fields": [
       "name",
       "search",

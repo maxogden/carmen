@@ -13,13 +13,14 @@
   "format": "png8:m=h:c=32",
   "interactivity": {
     "layer": "data",
-    "template_teaser": "<pre>Name:   {{name}}\nSearch: {{search}}\nLon:    {{lon}}\nLat:    {{lat}}\nArea:   {{area}}\nScore:  {{score}}</pre>",
+    "template_teaser": "<pre>Name:   {{name}}\nSearch: {{search}}\nLon:    {{lon}}\nLat:    {{lat}}\nBounds: {{bounds}}\nArea:   {{area}}\nScore:  {{score}}</pre>",
     "fields": [
       "name",
       "search",
       "lon",
       "lat",
-      "area"
+      "area",
+      "score"
     ]
   },
   "minzoom": 11,
@@ -36,7 +37,10 @@
         "file": "layers/flickr-places.sqlite",
         "table": "(SELECT name AS search, area AS score, * FROM data WHERE area > 1000 ORDER BY area DESC) AS data",
         "attachdb": "",
-        "extent": ""
+        "extent": "",
+        "id": "data",
+        "project": "flickr-places",
+        "srs": null
       },
       "id": "data",
       "class": "",
