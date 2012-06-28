@@ -1,3 +1,7 @@
+### Setup
+
+Run `setup.sh` to download data necessary for this project.
+
 ### Sources
 
 - Natural Earth 1.4.0 10m-admin-0-countries
