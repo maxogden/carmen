@@ -5,6 +5,8 @@
 
 #stations::glow {
   [kw>=0] {
+    [zoom=11] { marker-width:100*2*2; marker-opacity:0.500 }
+    [zoom=10] { marker-width:100*2;   marker-opacity:0.625 }
     [zoom=9] { marker-width:100; }
     [zoom=8] { marker-width:100/2; }
     [zoom=7] { marker-width:100/2/2; }
@@ -18,6 +20,8 @@
     marker-allow-overlap:true;
   }
   [kw>=10] {
+    [zoom=11] { marker-width:200*2*2; marker-opacity:0.500 }
+    [zoom=10] { marker-width:200*2;   marker-opacity:0.625 }
     [zoom=9] { marker-width:200; }
     [zoom=8] { marker-width:200/2; }
     [zoom=7] { marker-width:200/2/2; }
@@ -31,6 +35,8 @@
     marker-allow-overlap:true;
   }
   [kw>=45] {
+    [zoom=11] { marker-width:400*2*2; marker-opacity:0.500 }
+    [zoom=10] { marker-width:400*2;   marker-opacity:0.625 }
     [zoom=9] { marker-width:400; }
     [zoom=8] { marker-width:400/2; }
     [zoom=7] { marker-width:400/2/2; }
@@ -44,6 +50,8 @@
     marker-allow-overlap:true;
   }
   [kw>=75] {
+    [zoom=11] { marker-width:500*2*2; marker-opacity:0.500 }
+    [zoom=10] { marker-width:500*2;   marker-opacity:0.625 }
     [zoom=9] { marker-width:500; }
     [zoom=8] { marker-width:500/2; }
     [zoom=7] { marker-width:500/2/2; }
@@ -65,13 +73,17 @@
   marker-allow-overlap:true;
   [zoom>=5] { marker-width:2; }
   [zoom>=7] { marker-width:4; }
+  [zoom>=9] { marker-width:8; }
+  [zoom>=11] { marker-width:16; }
 }
 
 #stations::labels[zoom>=7] {
   text-name:"[search].replace(',','')";
   text-size:10;
   [zoom>=8][kw >= 10] { text-size:12; }
-  [zoom>=9][kw >= 10] { text-size:16; }
+  [zoom>=9][kw >= 10] { text-size:16; text-dx:10; }
+  [zoom>=10][kw >= 10] { text-size:20; text-dx:12; }
+  [zoom>=11][kw >= 10] { text-size:24; text-dx:16; }
   text-vertical-alignment:middle;
   text-dx:8;
   text-fill:#fff;
