@@ -1,0 +1,54 @@
+{
+  "bounds": [
+    -180,
+    3.5134,
+    -55.8984,
+    74.212
+  ],
+  "center": [
+    -88.374,
+    39.741,
+    5
+  ],
+  "format": "png",
+  "interactivity": {
+    "layer": "stations",
+    "template_teaser": "<strong>{{name}}</strong>\n<div><span style='display:inline-block; width:5em;'>Location</span> {{city}}, {{state}}</div>\n<div><span style='display:inline-block; width:5em;'>Power</span> {{kw}} kW</div>\n<!--hidden fields used to export metadata-->\n<div style='display:none'>{{search}}{{lon}}{{lat}}</div>",
+    "fields": [
+      "name",
+      "city",
+      "state",
+      "kw",
+      "search",
+      "lon",
+      "lat"
+    ]
+  },
+  "minzoom": 3,
+  "maxzoom": 9,
+  "srs": "+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0.0 +k=1.0 +units=m +nadgrids=@null +wktext +no_defs +over",
+  "Stylesheet": [
+    "style.mss"
+  ],
+  "Layer": [
+    {
+      "geometry": "point",
+      "id": "stations",
+      "class": "",
+      "Datasource": {
+        "file": "layers/stations.geojson",
+        "id": "stations",
+        "project": "npr-stations",
+        "srs": null
+      },
+      "srs-name": "autodetect",
+      "srs": "",
+      "name": "stations"
+    }
+  ],
+  "name": "NPR stations",
+  "description": "NPR stations by location and transmission power (kw).",
+  "attribution": "Data from <a href='http://www.broofa.com/Toys/NPRStations/'>Robert Kieffer</a>.",
+  "legend": "",
+  "_basemap": "http://a.tiles.mapbox.com/v3/mapbox.mapbox-light.jsonp"
+}
