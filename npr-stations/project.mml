@@ -10,7 +10,7 @@
     39.741,
     5
   ],
-  "format": "png8:m=h",
+  "format": "png8:m=h:c=64",
   "interactivity": {
     "layer": "stations",
     "template_teaser": "<strong>{{name}}</strong>\n<div><span style='display:inline-block; width:5em;'>Location</span> {{city}}, {{state}}</div>\n<div><span style='display:inline-block; width:5em;'>Power</span> {{kw}} kW</div>\n<!--hidden fields used to export metadata-->\n<div style='display:none'>{{search}}{{lon}}{{lat}}</div>",
