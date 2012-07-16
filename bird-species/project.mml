@@ -1,0 +1,50 @@
+{
+  "bounds": [
+    -180,
+    -85.0511,
+    180,
+    85.0511
+  ],
+  "center": [
+    -83.4961,
+    19.9733,
+    4
+  ],
+  "format": "png",
+  "interactivity": {
+    "layer": "data",
+    "template_teaser": "<div class='birds-tooltip'>\n  <strong>{{name}}</strong>\n  <strong>{{count}} species</strong>\n  <small>{{names}}</small>\n  <div class='carmen-fields' style='display:none'>\n  {{search}} {{lon}} {{lat}} {{bounds}}\n  </div>\n</div>\n<style type='text/css'>\n.birds-tooltip strong { display:block; font-size:16px; }\n.birds-tooltip small { font-size:10px; display:block; overflow:hidden; max-height:90px; line-height:15px; }\n</style>",
+    "fields": [
+      "count",
+      "names"
+    ]
+  },
+  "minzoom": 3,
+  "maxzoom": 10,
+  "srs": "+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0.0 +k=1.0 +units=m +nadgrids=@null +wktext +no_defs +over",
+  "Stylesheet": [
+    "style.mss"
+  ],
+  "Layer": [
+    {
+      "geometry": "polygon",
+      "Datasource": {
+        "type": "sqlite",
+        "file": "layers/bird-species.sqlite",
+        "table": "(SELECT names AS search, abs(round(lon,2))||'°W, '||abs(round(lat,2))||'°N' AS name, * FROM data) AS data",
+        "attachdb": "",
+        "extent": ""
+      },
+      "id": "data",
+      "class": "",
+      "srs-name": "900913",
+      "srs": "+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0.0 +k=1.0 +units=m +nadgrids=@null +wktext +no_defs +over",
+      "name": "data"
+    }
+  ],
+  "name": "Bird species",
+  "description": "Bird species of North America, gridded by species count.",
+  "_basemap": "http://a.tiles.mapbox.com/v3/mapbox.mapbox-light.jsonp",
+  "legend": "",
+  "attribution": "Data provided by NatureServe in collaboration with Robert Ridgely, James Zook, The Nature Conservancy - Migratory Bird Program, Conservation International - CABS, World Wildlife Fund - US, and Environment Canada - WILDSPACE."
+}
