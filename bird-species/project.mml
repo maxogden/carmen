@@ -13,10 +13,15 @@
   "format": "png",
   "interactivity": {
     "layer": "data",
-    "template_teaser": "<div class='birds-tooltip'>\n  <strong>{{name}}</strong>\n  <strong>{{count}} species</strong>\n  <small>{{names}}</small>\n  <div class='carmen-fields' style='display:none'>\n  {{search}} {{lon}} {{lat}} {{bounds}}\n  </div>\n</div>\n<style type='text/css'>\n.birds-tooltip strong { display:block; font-size:16px; }\n.birds-tooltip small { font-size:10px; display:block; overflow:hidden; max-height:90px; line-height:15px; }\n</style>",
+    "template_teaser": "<div class='birds-tooltip'>\n  <strong>{{name}}</strong>\n  <strong>{{count}} species</strong>\n  <small>{{species}}</small>\n  <div class='carmen-fields' style='display:none'>\n  {{search}} {{lon}} {{lat}} {{bounds}}\n  </div>\n</div>\n<style type='text/css'>\n.birds-tooltip strong { display:block; font-size:16px; }\n.birds-tooltip small { font-size:10px; display:block; overflow:hidden; max-height:90px; line-height:15px; }\n</style>",
     "fields": [
+      "name",
       "count",
-      "names"
+      "names",
+      "search",
+      "lon",
+      "lat",
+      "bounds"
     ]
   },
   "minzoom": 3,
@@ -31,7 +36,7 @@
       "Datasource": {
         "type": "sqlite",
         "file": "layers/bird-species.sqlite",
-        "table": "(SELECT names AS search, abs(round(lon,2))||'°W, '||abs(round(lat,2))||'°N' AS name, * FROM data) AS data",
+        "table": "(SELECT names AS species, names AS search, abs(round(lon,2))||'°W, '||abs(round(lat,2))||'°N' AS name, * FROM data) AS data",
         "attachdb": "",
         "extent": ""
       },
