@@ -23,10 +23,8 @@ schema = {
         'MAG': 'float',
         'COLOR': 'float',
         'NAME': 'str',
-        'HD': 'str',
         'HR': 'str',
-        'GLIESE': 'str',
-        'BF': 'str'
+        'DISTANCE': 'float'
     }
 }
 
@@ -57,6 +55,7 @@ with collection(
             color_index = float(row[16])
         else:
             color_index = 0
+        distance = float(row[9])
         abs_magnitude = float(row[14])
         proper_name = row[6]
         f = {
@@ -64,10 +63,8 @@ with collection(
                     "MAG": abs_magnitude,
                     "NAME": proper_name,
                     "COLOR": color_index,
-                    "HD": row[2],
                     "HR": row[3],
-                    "GLIESE": row[4],
-                    "BF": row[5]
+                    "DISTANCE": distance
                 },
                 "geometry": {
                     "type": "Point",

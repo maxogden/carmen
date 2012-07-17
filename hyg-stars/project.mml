@@ -12,9 +12,16 @@
   ],
   "format": "png8:c=128",
   "interactivity": {
-    "layer": "stars",
-    "template_teaser": "<div class='stars-tooltip'>\n<strong class='stars-name'>{{name}}</strong>\n<strong class='stars-mag'>{{nicemag}}</strong>\n<small>apparent magnitude</small>\n</div>\n<style type='text/css'>\n.stars-tooltip * { display:block; text-align:center; }\n.stars-tooltip .stars-mag { font-size:40px; line-height:40px; }\n.stars-tooltip small { display:block; font-size:10px; }\n</style>\n<!--Hidden metadata tokens for export-->\n<div style='display:none'>{{search}}{{color}}{{hd}}{{hr}}{{gliese}}{{bf}}</div>",
-    "fields": []
+    "layer": "named",
+    "template_teaser": "<div class='stars-tooltip'>\n<strong class='stars-name'>{{name}}</strong>\n<strong class='stars-mag'>{{nicemag}}</strong>\n<small>apparent magnitude</small>\n<small>{{distance}} light years from Earth</small>\n</div>\n<style type='text/css'>\n.stars-tooltip * { display:block; text-align:center; }\n.stars-tooltip .stars-mag { font-size:40px; line-height:40px; }\n.stars-tooltip small { display:block; font-size:10px; }\n</style>\n<!--Hidden metadata tokens for export-->\n<div style='display:none'>{{search}}{{color}}{{hr}}</div>",
+    "fields": [
+      "name",
+      "nicemag",
+      "lightyears",
+      "search",
+      "color",
+      "hr"
+    ]
   },
   "minzoom": 0,
   "maxzoom": 8,
@@ -28,7 +35,7 @@
       "Datasource": {
         "type": "sqlite",
         "file": "layers/stars.sqlite",
-        "table": "(SELECT\n  COALESCE(name,'HR'||hr,'HD'||hd,'Unknown') AS name, \n  COALESCE(name,'')||',HR'||COALESCE(hr,'')||',HD'||COALESCE(hd,'') AS search, \n  name IS NOT NULL AS named,\n  ROUND(mag,1) AS nicemag,\n  * FROM stars) AS stars",
+        "table": "(SELECT * FROM stars WHERE named = 0) AS stars",
         "attachdb": "",
         "extent": "",
         "id": "stars",
@@ -40,6 +47,24 @@
       "srs-name": "900913",
       "srs": "+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0.0 +k=1.0 +units=m +nadgrids=@null +wktext +no_defs +over",
       "name": "stars"
+    },
+    {
+      "geometry": "point",
+      "Datasource": {
+        "type": "sqlite",
+        "file": "layers/stars.sqlite",
+        "table": "(SELECT\n  COALESCE(name,'HR'||hr) AS name, \n  COALESCE(name,'')||',HR'||COALESCE(hr,'') AS search, \n  name IS NULL AND hr IS NOT NULL AS hasid,\n  name IS NOT NULL AS hasname,\n  ROUND(mag,1) AS nicemag,\n  ROUND(distance*3.262) AS distance, \n  * FROM stars WHERE named = 1) AS stars",
+        "attachdb": "",
+        "extent": "",
+        "id": "named",
+        "project": "hyg-stars",
+        "srs": null
+      },
+      "id": "named",
+      "class": "",
+      "srs-name": "900913",
+      "srs": "+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0.0 +k=1.0 +units=m +nadgrids=@null +wktext +no_defs +over",
+      "name": "named"
     }
   ],
   "name": "HYG Stars",

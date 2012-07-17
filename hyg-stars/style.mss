@@ -7,6 +7,7 @@ Map {
   font-directory: url(./fonts);
 }
 
+#named::dots,
 #stars::dots {
   [color <= 0] {
     marker-fill:fadeout(#DDFFFC, 20%);
@@ -58,7 +59,7 @@ Map {
   }
 }
 
-#stars::markedBuffer[zoom>=3][named=1] {
+#named::markedBuffer[zoom>=3][hasname=1] {
   marker-width:@mw;
   marker-line-width:@bw;
   marker-line-color:fadeout(@bg, 50%);
@@ -71,7 +72,7 @@ Map {
   [zoom >= 8] { marker-width:@mw*16; marker-line-width:@bw*16; }
   }
 
-#stars::marked[zoom>=3][named=1] {
+#named::marked[zoom>=3][hasname=1] {
   marker-width:@mw;
   marker-line-width:0.75;
   marker-line-color:#ddd;
@@ -84,17 +85,41 @@ Map {
   [zoom >= 8] { marker-width:@mw*16 }
 }
 
-#stars::labels[zoom>=4][named=1] {
+#named::iddline[zoom>=6][hasid=1] {
+  text-name:'"|"';
+  text-size:7;
+  text-dy:4;
+  text-face-name:'DejaVu Sans Bold';
+  text-allow-overlap:true;
+  text-fill:#999;
+  [zoom >= 7] { text-size:9; text-dy:6; }
+  [zoom >= 8] { text-size:11; text-dy:8; }
+}
+
+#named::idd[zoom>=6][hasid=1] {
   text-name:'[name]';
   text-face-name:'Carton Slab';
-  text-size:9;
+  text-size:10;
+  text-fill:#ddd;
+  text-halo-fill:#000;
+  text-halo-radius:1;
+  text-allow-overlap:true;
+  text-dy:15;
+  [zoom >= 7] { text-size:12; text-dy:20; }
+  [zoom >= 8] { text-size:16; text-dy:25; }
+}
+
+#named::named[zoom>=4][hasname=1] {
+  text-name:'[name]';
+  text-face-name:'Carton Slab';
+  text-size:10;
   text-fill:#ddd;
   text-halo-fill:#000;
   text-halo-radius:1;
   text-allow-overlap:true;
   text-dy:5;
-  [zoom >= 5] { text-size:10; text-dy:10; }
-  [zoom >= 6] { text-size:12; text-dy:15; }
-  [zoom >= 7] { text-size:14; text-dy:25; }
-  [zoom >= 8] { text-size:16; text-dy:40; }
+  [zoom >= 5] { text-size:12; text-dy:10; }
+  [zoom >= 6] { text-size:16; text-dy:15; }
+  [zoom >= 7] { text-size:20; text-dy:25; }
+  [zoom >= 8] { text-size:24; text-dy:40; }
 }
