@@ -13,12 +13,14 @@
   "format": "png8:m=h:c=16",
   "interactivity": {
     "layer": "data",
-    "template_teaser": "<pre>Name:   {{name}}\nSearch: {{search}}\nLon:    {{lon}}\nLat:    {{lat}}\nBounds: {{bounds}}</pre>",
+    "template_teaser": "<pre>Name:   {{name}}\nSearch: {{search}}\nLon:    {{lon}}\nLat:    {{lat}}\nScore:  {{score}}\nBounds: {{bounds}}</pre>",
     "fields": [
       "name",
       "search",
       "lon",
-      "lat"
+      "lat",
+      "area",
+      "bounds"
     ]
   },
   "minzoom": 9,
@@ -33,7 +35,7 @@
       "Datasource": {
         "type": "sqlite",
         "file": "layers/ne-provinces.sqlite",
-        "table": "data",
+        "table": "(SELECT area AS score, * FROM data) AS data",
         "attachdb": "",
         "extent": "",
         "id": "data",
@@ -50,6 +52,5 @@
   "name": "ne-provinces",
   "description": "",
   "legend": "",
-  "attribution": "",
-  "_basemap": "http://a.tiles.mapbox.com/v3/mapbox.mapbox-light.jsonp"
+  "attribution": ""
 }
