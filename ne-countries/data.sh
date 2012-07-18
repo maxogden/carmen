@@ -20,13 +20,15 @@ rm -rf $TMP
 
 echo "
 UPDATE data SET search='United States of America, United States, America, USA, US' WHERE iso2 = 'US';
-UPDATE data SET search='United Kingdom, UK' WHERE iso2 = 'UK';
+UPDATE data SET search='United Kingdom, UK' WHERE iso2 = 'GB';
 UPDATE data SET search='Canada, CA' WHERE iso2 = 'CA';
 UPDATE data SET search='Colombia, Columbia' WHERE iso2 = 'CO';
 UPDATE data SET search='Australia, AU' WHERE iso2 = 'AU';
 UPDATE data SET search='Germany, DE' WHERE iso2 = 'DE';
 UPDATE data SET search='France, FR' WHERE iso2 = 'FR';
+UPDATE data SET search='South Korea, Korea' WHERE iso2 = 'KR';
 UPDATE data SET search='Democratic Republic of the Congo, DRC' WHERE iso2 = 'CD';
+UPDATE data SET search='United Arab Emirates, UAE' WHERE iso2 = 'AE';
 " | sqlite3 ne-countries.sqlite
 
 echo "Written to ne-countries.sqlite."
