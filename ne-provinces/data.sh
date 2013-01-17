@@ -5,7 +5,7 @@ TMP=`mktemp -d tmpXXXX`
 createdb -U postgres -T template_postgis $TMP
 curl -sfo $TMP/10m-admin-1-states-provinces-shp.zip http://mapbox-geodata.s3.amazonaws.com/natural-earth-1.4.0/cultural/10m-admin-1-states-provinces-shp.zip
 unzip -q $TMP/10m-admin-1-states-provinces-shp.zip -d $TMP
-ogr2ogr -s_srs EPSG:900913 -t_srs EPSG:4326 -nlt MULTIPOLYGON -nln import -f "PostgreSQL" PG:"host=localhost user=postgres dbname=$TMP" $TMP/10m-admin-1-states-provinces-shp.shp
+ogr2ogr --config SHAPE_ENCODING UTF-8 -s_srs EPSG:900913 -t_srs EPSG:4326 -nlt MULTIPOLYGON -nln import -f "PostgreSQL" PG:"host=localhost user=postgres dbname=$TMP" $TMP/10m-admin-1-states-provinces-shp.shp
 
 echo "
 CREATE TABLE data(id SERIAL PRIMARY KEY, name VARCHAR, search VARCHAR, lon FLOAT, lat FLOAT, bounds VARCHAR, area FLOAT);
