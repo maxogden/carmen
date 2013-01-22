@@ -33,7 +33,7 @@
       "Datasource": {
         "type": "sqlite",
         "file": "layers/tiger-zipcodes.sqlite",
-        "table": "(SELECT zipcode AS name, zipcode AS search, * FROM data) AS data",
+        "table": "(SELECT zipcode AS name, * FROM data) AS data",
         "attachdb": "",
         "extent": "",
         "id": "data",
