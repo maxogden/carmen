@@ -10,9 +10,6 @@ echo "reprojecting..."
 ogr2ogr -nlt MULTIPOLYGON -nln import -f "PostgreSQL" PG:"host=localhost user=postgres dbname=$TMP" $TMP/qs_adm1.shp
 
 echo "importing..."
-
-# CONCAT(forename,' ',IFNULL(CONCAT(initials,' '), ''),surname)
-
 echo "
 CREATE TABLE data(id SERIAL PRIMARY KEY, name VARCHAR, search VARCHAR, lon FLOAT, lat FLOAT, bounds VARCHAR, area FLOAT);
 SELECT AddGeometryColumn('public', 'data', 'geometry', 4326, 'MULTIPOLYGON', 2);

@@ -1,0 +1,65 @@
+{
+  "bounds": [
+    -180,
+    -85.0511,
+    180,
+    85.0511
+  ],
+  "center": [
+    -74,
+    40.75,
+    8
+  ],
+  "format": "png8:m=h:c=16",
+  "interactivity": {
+    "layer": "data",
+    "template_teaser": "<pre>Name:   {{name}}\nSearch: {{search}}\nLon:    {{lon}}\nLat:    {{lat}}\nBounds: {{bounds}}\n</pre>",
+    "fields": [
+      "name",
+      "search",
+      "lon",
+      "lat",
+      "bounds"
+    ]
+  },
+  "minzoom": 8,
+  "maxzoom": 8,
+  "srs": "+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0.0 +k=1.0 +units=m +nadgrids=@null +wktext +no_defs +over",
+  "Stylesheet": [
+    "style.mss"
+  ],
+  "Layer": [
+    {
+      "geometry": "polygon",
+      "Datasource": {
+        "type": "sqlite",
+        "file": "layers/qs-adm1.sqlite",
+        "table": "data",
+        "attachdb": "",
+        "extent": "",
+        "id": "data",
+        "project": "qs-adm1",
+        "srs": null
+      },
+      "id": "data",
+      "class": "",
+      "srs-name": "900913",
+      "srs": "+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0.0 +k=1.0 +units=m +nadgrids=@null +wktext +no_defs +over",
+      "name": "data",
+      "extent": [
+        -179.99999692067183,
+        -83.22682109912479,
+        179.99999692067183,
+        83.65398425648603
+      ],
+      "advanced": {}
+    }
+  ],
+  "scale": 1,
+  "metatile": 2,
+  "_basemap": "mapbox.mapbox-light",
+  "name": "qs-adm1",
+  "description": "",
+  "legend": "",
+  "attribution": ""
+}
