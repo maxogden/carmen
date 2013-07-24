@@ -10,10 +10,13 @@ echo "reprojecting..."
 ogr2ogr -nlt MULTIPOLYGON -nln import -f "PostgreSQL" PG:"host=localhost user=postgres dbname=$TMP" $TMP/qs_adm1.shp
 
 echo "importing..."
+
+# CONCAT(forename,' ',IFNULL(CONCAT(initials,' '), ''),surname)
+
 echo "
 CREATE TABLE data(id SERIAL PRIMARY KEY, name VARCHAR, search VARCHAR, lon FLOAT, lat FLOAT, bounds VARCHAR, area FLOAT);
 SELECT AddGeometryColumn('public', 'data', 'geometry', 4326, 'MULTIPOLYGON', 2);
-INSERT INTO data (id, geometry, name, search) SELECT ogc_fid, st_setsrid(wkb_geometry,4326), qs_a1 AS name, qs_a1||','||qs_a1_alt AS search FROM import;
+INSERT INTO data (id, geometry, name, search) SELECT ogc_fid, st_setsrid(wkb_geometry,4326), qs_a1 AS name, coalesce(qs_a1||','||qs_a1_alt, qs_a1) AS search FROM import;
 UPDATE data SET lon = st_x(st_pointonsurface(geometry)), lat = st_y(st_pointonsurface(geometry)), bounds = st_xmin(geometry)||','||st_ymin(geometry)||','||st_xmax(geometry)||','||st_ymax(geometry);
 UPDATE data SET area = 0;
 UPDATE data SET area = st_area(st_geogfromwkb(geometry)) where st_within(geometry,st_geomfromtext('POLYGON((-180 -90, -180 90, 180 90, 180 -90, -180 -90))',4326));
