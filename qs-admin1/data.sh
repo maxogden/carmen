@@ -39,7 +39,7 @@ ogr2ogr \
 	qs-adm1.sqlite \
 	PG:"host=localhost user=postgres dbname=$TMP" data
 echo "cleaning up..."
-# dropdb -U postgres $TMP
-# rm -rf $TMP
+dropdb -U postgres $TMP
+rm -rf $TMP
 
 echo "Written to qs-adm1.sqlite."
