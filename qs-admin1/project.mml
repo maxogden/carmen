@@ -26,13 +26,13 @@
       "geometry": "polygon",
       "extent": [
         -179.99999692067183,
-        -83.22682109912479,
+        -84.99999931069873,
         179.99999692067183,
         83.65398425648603
       ],
       "Datasource": {
         "type": "sqlite",
-        "file": "/Users/ianvilleda/Documents/carmen/qs-admin1/layers/qs-adm1.sqlite",
+        "file": "layers/qs-adm1.sqlite",
         "table": "(SELECT area AS score, * FROM data) AS data",
         "attachdb": "",
         "extent": ""
