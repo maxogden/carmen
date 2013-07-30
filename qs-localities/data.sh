@@ -20,10 +20,10 @@ echo "cleaning..."
 echo "
 CREATE TABLE data(id SERIAL PRIMARY KEY, name VARCHAR, geometry GEOMETRY(Geometry, 4326), search VARCHAR, lon FLOAT, lat FLOAT, bounds VARCHAR, area FLOAT);
 INSERT INTO data (id, geometry, name, search)
-	SELECT ogc_fid, st_setsrid(st_makevalid(wkb_geometry),4326), qs_loc AS name, coalesce(qs_loc||','||qs_loc_alt, qs_loc) AS search FROM import;
+	SELECT ogc_fid, st_setsrid(wkb_geometry,4326), qs_loc AS name, coalesce(qs_loc||','||qs_loc_alt, qs_loc) AS search FROM import;
 UPDATE data SET
-    lon = st_x(st_pointonsurface(geometry)),
-    lat = st_y(st_pointonsurface(geometry)),
+    lon = st_x(st_pointonsurface(st_makevalid(geometry))),
+    lat = st_y(st_pointonsurface(st_makevalid(geometry))),
     bounds = st_xmin(geometry)||','||st_ymin(geometry)||','||st_xmax(geometry)||','||st_ymax(geometry);
 UPDATE data SET area = 0;
 UPDATE data SET area = st_area(st_geogfromwkb(geometry)) where st_within(geometry,st_geomfromtext('POLYGON((-180 -90, -180 90, 180 90, 180 -90, -180 -90))',4326));
