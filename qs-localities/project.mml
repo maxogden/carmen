@@ -13,7 +13,7 @@
   "format": "png8:m=h:c=16",
   "interactivity": {
     "layer": "data",
-    "template_teaser": "<pre>Name:   {{name}}\nSearch: {{search}}\nLon:    {{lon}}\nLat:    {{lat}}\nBounds: {{bounds}}</pre>",
+    "template_teaser": "<pre>Name:   {{name}}\nSearch: {{search}}\nLon:    {{lon}}\nLat:    {{lat}}\nScore:  {{score}}\nBounds: {{bounds}}</pre>",
     "fields": [
       "name",
       "search",
@@ -34,7 +34,7 @@
       "Datasource": {
         "type": "sqlite",
         "file": "layers/qs-localities.sqlite",
-        "table": "data",
+        "table": "(select area as score,* from data) as data",
         "attachdb": "",
         "extent": "",
         "id": "data",
@@ -45,11 +45,19 @@
       "class": "",
       "srs-name": "900913",
       "srs": "+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0.0 +k=1.0 +units=m +nadgrids=@null +wktext +no_defs +over",
-      "name": "data"
+      "name": "data",
+      "extent": [
+        -179.12960127558276,
+        -56.52908915316081,
+        178.32458501687188,
+        79.83636338227218
+      ],
+      "advanced": {}
     }
   ],
   "scale": 1,
   "metatile": 2,
+  "_basemap": "",
   "name": "qs-localities",
   "description": "",
   "legend": "",
