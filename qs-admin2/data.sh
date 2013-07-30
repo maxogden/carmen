@@ -20,7 +20,7 @@ echo "cleaning..."
 echo "
 CREATE TABLE data(id SERIAL PRIMARY KEY, name VARCHAR, geometry GEOMETRY(Geometry, 4326), search VARCHAR, lon FLOAT, lat FLOAT, bounds VARCHAR, area FLOAT);
 INSERT INTO data (id, geometry, name, search)
-	SELECT ogc_fid, st_setsrid(st_wrapx(wkb_geometry, 180, -180),4326), qs_a1 AS name, coalesce(qs_a2||','||qs_a2_alt, qs_a2) AS search FROM import;
+	SELECT ogc_fid, st_setsrid(st_wrapx(wkb_geometry, 180, -180),4326), qs_a2 AS name, coalesce(qs_a2||','||qs_a2_alt, qs_a2) AS search FROM import;
 UPDATE data SET
     lon = st_x(st_pointonsurface(geometry)),
     lat = st_y(st_pointonsurface(geometry)),
