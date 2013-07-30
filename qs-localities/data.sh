@@ -7,8 +7,9 @@ createdb -U postgres -T template_postgis $TMP
 echo "downloading..."
 curl -sfo $TMP/qs_localities.zip http://static.quattroshapes.com/qs_localities.zip
 unzip -q $TMP/qs_localities.zip -d $TMP
+
 echo "importing..."
-#export PGCLIENTENCODING=latin1
+export PGCLIENTENCODING=latin1
 ogr2ogr \
 	-nlt MULTIPOLYGON \
 	-nln import \
