@@ -13,6 +13,7 @@ export PGCLIENTENCODING=latin1
 ogr2ogr \
 	-nlt MULTIPOLYGON \
 	-nln import \
+	-lco PRECISION=NO \
 	-f "PostgreSQL" PG:"host=localhost user=postgres dbname=$TMP" \
 	$TMP/qs_neighborhoods.shp
 
