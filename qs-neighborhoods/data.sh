@@ -21,7 +21,7 @@ echo "cleaning..."
 echo "
 CREATE TABLE data(id SERIAL PRIMARY KEY, name VARCHAR, geometry GEOMETRY(Geometry, 4326), search VARCHAR, lon FLOAT, lat FLOAT, bounds VARCHAR, area FLOAT);
 INSERT INTO data (id, geometry, name, search)
-	SELECT ogc_fid, st_setsrid(wkb_geometry,4326), qs_loc AS name, coalesce(qs_loc||','||qs_loc_alt, qs_loc) AS search FROM import;
+	SELECT ogc_fid, st_setsrid(wkb_geometry,4326), name AS name, coalesce(name||','||name_en||','||gn_name, name) AS search FROM import;
 UPDATE data SET
     lon = st_x(st_pointonsurface(st_makevalid(geometry))),
     lat = st_y(st_pointonsurface(st_makevalid(geometry))),
