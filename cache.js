@@ -48,6 +48,9 @@ Cache.prototype.getall = function(getter, type, ids, callback) {
         // Loading results.
         var shard = Cache.shard(shardlevel, queue[0]);
         if (!cache[type][shard]) return getter(type, shard, function(err, buffer) {
+            console.log('type: ' + type);
+            console.log('shard: ' + shard);
+            console.log('buffer: ' + typeof(buffer));
             if (err) return callback(err);
             try {
                 cache.load(buffer, type, shard)
