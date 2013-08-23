@@ -115,7 +115,7 @@ Handle<Value> Engine::addSync(Arguments const& args)
             if (message.tag == 1) {
                 uint32_t bytes = message.varint();
                 llmr::pbf item(message.data, bytes);
-                Local<ArrayBuffer> val_array = ArrayBuffer::New();
+                Local<Array> val_array = Array::New();
                 while (item.next()) {
                     if (item.tag == 1) {
                         uint32_t arrays_length = item.varint();

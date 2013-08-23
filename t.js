@@ -1,6 +1,5 @@
 var fs = require('fs');
 //var mem = require('./lib/mem.node');
-var protobuf = require('./protobuf');
 var type = 'grid';
 var shard = 0;
 var times = 100;
