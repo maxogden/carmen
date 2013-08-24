@@ -13,6 +13,9 @@
 #include <string>
 
 #include "pbf.hpp"
+#include "index.capnp.h"
+#include <capnp/message.h>
+#include <capnp/serialize-packed.h>
 
 // https://github.com/jasondelponte/go-v8/blob/master/src/v8context.cc#L41
 // http://v8.googlecode.com/svn/trunk/test/cctest/test-threads.cc
@@ -31,8 +34,8 @@ public:
     static Persistent<FunctionTemplate> constructor;
     static void Initialize(Handle<Object> target);
     static Handle<Value> New(Arguments const& args);
-    static Handle<Value> add(Arguments const& args);
-    static Handle<Value> addSync(Arguments const& args);
+    //static Handle<Value> add(Arguments const& args);
+    static Handle<Value> parseProto(Arguments const& args);
     static void AsyncRun(uv_work_t* req);
     static void AfterRun(uv_work_t* req);
     Engine();
@@ -49,8 +52,8 @@ void Engine::Initialize(Handle<Object> target) {
     constructor = Persistent<FunctionTemplate>::New(FunctionTemplate::New(Engine::New));
     constructor->InstanceTemplate()->SetInternalFieldCount(1);
     constructor->SetClassName(String::NewSymbol("Engine"));
-    NODE_SET_PROTOTYPE_METHOD(constructor, "add", add);
-    NODE_SET_PROTOTYPE_METHOD(constructor, "addSync", addSync);
+    //NODE_SET_PROTOTYPE_METHOD(constructor, "add", add);
+    NODE_SET_PROTOTYPE_METHOD(constructor, "parseProto", parseProto);
     target->Set(String::NewSymbol("Engine"),constructor->GetFunction());
 }
 
@@ -76,18 +79,8 @@ Handle<Value> Engine::New(Arguments const& args)
     return Undefined();
 }
 
-typedef struct {
-    uv_work_t request;
-    Engine * machine;
-    char *data;
-    size_t dataLength;
-    bool error;
-    std::string result;
-    Persistent<Function> cb;
-} add_baton_t;
 
-
-Handle<Value> Engine::addSync(Arguments const& args)
+Handle<Value> Engine::parseProto(Arguments const& args)
 {
     HandleScope scope;
     if (args.Length() < 1) {
@@ -156,6 +149,17 @@ Handle<Value> Engine::addSync(Arguments const& args)
     }
     return scope.Close(json);
 }
+
+/*
+typedef struct {
+    uv_work_t request;
+    Engine * machine;
+    char *data;
+    size_t dataLength;
+    bool error;
+    std::string result;
+    Persistent<Function> cb;
+} add_baton_t;
 
 Handle<Value> Engine::add(Arguments const& args)
 {
@@ -234,6 +238,7 @@ void Engine::AfterRun(uv_work_t* req) {
     closure->cb.Dispose();
     delete closure;
 }
+*/
 
 extern "C" {
     static void start(Handle<Object> target) {
