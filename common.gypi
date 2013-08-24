@@ -5,13 +5,14 @@
           'Debug': {
               'cflags_cc!': ['-O3', '-Os', '-DNDEBUG'],
               'xcode_settings': {
-                'OTHER_CPLUSPLUSFLAGS!':['-O3', '-Os', '-DNDEBUG'],
+                'OTHER_CPLUSPLUSFLAGS!':['-O3', '-Os', '-DDEBUG'],
                 'GCC_OPTIMIZATION_LEVEL': '0',
                 'GCC_GENERATE_DEBUGGING_SYMBOLS': 'YES'
               }
           },
           'Release': {
               'xcode_settings': {
+                'OTHER_CPLUSPLUSFLAGS':['-DNDEBUG'],
                 'GCC_OPTIMIZATION_LEVEL': '3',
                 'GCC_GENERATE_DEBUGGING_SYMBOLS': 'NO',
                 'DEAD_CODE_STRIPPING':'YES',
