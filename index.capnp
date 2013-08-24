@@ -2,7 +2,7 @@
 @0xdf41ce6e36d15bd6;
 
 struct Array {
-  val @0 :List(UInt32);
+  val @0 :List(UInt64);
 }
 
 struct Item {
