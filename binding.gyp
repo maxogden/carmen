@@ -38,7 +38,8 @@
         'GCC_ENABLE_CPP_EXCEPTIONS': 'YES',
         'CLANG_CXX_LANGUAGE_STANDARD':'c++11',
         'MACOSX_DEPLOYMENT_TARGET':'10.7'
-      }
+      },
+      'libraries':[ '-lkj','-lcapnp'],
     },
     {
       'target_name': 'action_after_build',

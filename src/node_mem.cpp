@@ -36,6 +36,7 @@ public:
     static Handle<Value> New(Arguments const& args);
     //static Handle<Value> add(Arguments const& args);
     static Handle<Value> parseProto(Arguments const& args);
+    static Handle<Value> parseCapnProto(Arguments const& args);
     static void AsyncRun(uv_work_t* req);
     static void AfterRun(uv_work_t* req);
     Engine();
@@ -54,6 +55,7 @@ void Engine::Initialize(Handle<Object> target) {
     constructor->SetClassName(String::NewSymbol("Engine"));
     //NODE_SET_PROTOTYPE_METHOD(constructor, "add", add);
     NODE_SET_PROTOTYPE_METHOD(constructor, "parseProto", parseProto);
+    NODE_SET_PROTOTYPE_METHOD(constructor, "parseCapnProto", parseCapnProto);
     target->Set(String::NewSymbol("Engine"),constructor->GetFunction());
 }
 
@@ -79,6 +81,116 @@ Handle<Value> Engine::New(Arguments const& args)
     return Undefined();
 }
 
+namespace capnp {
+class TestPipe: public kj::BufferedInputStream, public kj::OutputStream {
+public:
+  TestPipe()
+      : preferredReadSize(std::numeric_limits<size_t>::max()), readPos(0) {}
+  explicit TestPipe(size_t preferredReadSize)
+      : preferredReadSize(preferredReadSize), readPos(0) {}
+  ~TestPipe() {}
+
+  const std::string& getData() { return data; }
+  void resetRead(size_t preferredReadSize = std::numeric_limits<size_t>::max()) {
+    readPos = 0;
+    this->preferredReadSize = preferredReadSize;
+  }
+
+  bool allRead() {
+    return readPos == data.size();
+  }
+
+  void clear(size_t preferredReadSize = std::numeric_limits<size_t>::max()) {
+    resetRead(preferredReadSize);
+    data.clear();
+  }
+
+  void write(const void* buffer, size_t size) override {
+    data.append(reinterpret_cast<const char*>(buffer), size);
+  }
+
+  size_t tryRead(void* buffer, size_t minBytes, size_t maxBytes) override {
+    //KJ_ASSERT(maxBytes <= data.size() - readPos, "Overran end of stream.");
+    size_t amount = std::min(maxBytes, std::max(minBytes, preferredReadSize));
+    memcpy(buffer, data.data() + readPos, amount);
+    readPos += amount;
+    return amount;
+  }
+
+  void skip(size_t bytes) override {
+    //KJ_ASSERT(bytes <= data.size() - readPos, "Overran end of stream.");
+    readPos += bytes;
+  }
+
+  kj::ArrayPtr<const kj::byte> tryGetReadBuffer() override {
+    size_t amount = std::min(data.size() - readPos, preferredReadSize);
+    return kj::arrayPtr(reinterpret_cast<const kj::byte*>(data.data() + readPos), amount);
+  }
+
+private:
+  size_t preferredReadSize;
+  std::string data;
+  std::string::size_type readPos;
+};
+}
+
+Handle<Value> Engine::parseCapnProto(Arguments const& args)
+{
+    HandleScope scope;
+    if (args.Length() < 1) {
+        ThrowException(String::New("first argument must be a buffer"));
+    }
+
+    if (!args[0]->IsObject()) {
+        return ThrowException(String::New("first argument must be a buffer"));
+    }
+
+    Local<Object> obj = args[0]->ToObject();
+    if (obj->IsNull() || obj->IsUndefined()) {
+        ThrowException(Exception::TypeError(String::New("a buffer expected for first argument")));
+    }
+    if (!node::Buffer::HasInstance(obj)) {
+        return ThrowException(Exception::TypeError(String::New(
+                                                       "first argument must be a buffer")));
+    }
+    Local<Object> json = Object::New();
+    try {
+        const char * cdata = node::Buffer::Data(obj);
+        size_t size = node::Buffer::Length(obj);
+/*
+        ::kj::ArrayPtr<const ::kj::byte> arr_ptr(&cdata[0],size);
+        ::kj::ArrayInputStream in(arr_ptr);
+        ::capnp::ReaderOptions options;
+        ::capnp::PackedMessageReader reader(in,options,nullptr);
+*/
+        ::node_mem::capnp::TestPipe pipe;
+        pipe.write(cdata,size);
+        ::capnp::PackedMessageReader reader(pipe);
+        carmen::Message::Reader msg = reader.getRoot<carmen::Message>();
+        auto items = msg.getItems();
+        unsigned items_size = items.size();
+        for (unsigned i=0;i<items_size;++i) {
+            auto item = items[i];
+            auto array = item.getArrays();
+            unsigned array_size = array.size();
+            Local<Array> arr_obj = Array::New(array_size);
+            for (unsigned j=0;j<array_size;++j) {
+                auto arr = array[0];
+                auto vals = arr.getVal();
+                unsigned vals_size = vals.size();
+                Local<Array> vals_obj = Array::New(vals_size);
+                for (unsigned k=0;k<vals_size;++k) {
+                    vals_obj->Set(k,Number::New(vals[k]));
+                }
+                arr_obj->Set(j,vals_obj);
+            }
+            json->Set(String::New(item.getKey().cStr()),arr_obj);
+        }
+    } catch (std::exception const& ex) {
+        return ThrowException(Exception::TypeError(String::New(ex.what())));
+    }
+    return scope.Close(json);
+}
 
 Handle<Value> Engine::parseProto(Arguments const& args)
 {
@@ -103,6 +215,7 @@ Handle<Value> Engine::parseProto(Arguments const& args)
     try {
         const char * cdata = node::Buffer::Data(obj);
         size_t size = node::Buffer::Length(obj);
+        // @TODO - prevent crash on invalid data
         llmr::pbf message(cdata,size);
         while (message.next()) {
             if (message.tag == 1) {
