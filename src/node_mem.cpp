@@ -138,6 +138,8 @@ private:
   size_t readPos_;
 };
 
+static constexpr uint32_t max_32_int = std::numeric_limits<uint32_t>::max();
+
 #define CREATE_JS_OBJ
 constexpr size_t SCRATCH_SIZE = 128 * 1024;
 ::capnp::word scratchSpace[6 * SCRATCH_SIZE];
@@ -236,6 +238,7 @@ NAN_METHOD(Engine::parseCapnProto)
             unsigned array_size = array.size();
             //std::clog << "array_size " << array_size << "\n";
             #ifdef CREATE_JS_OBJ
+            // Int32Array
             Local<Array> arr_obj = Array::New(array_size);
             #endif
             for (unsigned j=0;j<array_size;++j) {
@@ -255,7 +258,12 @@ NAN_METHOD(Engine::parseCapnProto)
                 #endif
             }
             #ifdef CREATE_JS_OBJ
-            json->Set(Number::New(item.getKey()),arr_obj);
+            uint64_t num = item.getKey();
+            if (num < max_32_int) {
+                json->Set(num,arr_obj);
+            } else {
+                json->Set(Number::New(item.getKey()),arr_obj);
+            }
             #endif
         }
     } catch (std::exception const& ex) {

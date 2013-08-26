@@ -2,7 +2,7 @@ var fs = require('fs');
 var mem = require('./lib/mem.node');
 var type = 'grid';
 var shard = 0;
-var times = 1;
+var times = 100;
 
 /*
 preload for fast case
@@ -11,14 +11,13 @@ not moving data but computation
 
 var json = fs.readFileSync(__dirname + '/test/fixtures/big/' + type + '.' + shard + '.json');
 var proto = fs.readFileSync(__dirname + '/test/fixtures/big/' + type + '.' + shard + '.pbf');
-//var capnproto = fs.readFileSync(__dirname + '/test/fixtures/big/' + type + '.' + shard + '.packed');
-//var capnproto = fs.readFileSync(__dirname + '/test/fixtures/big/' + type + '.' + shard + '.packed.singleseg');
-//var capnproto = fs.readFileSync(__dirname + '/test/fixtures/big/' + type + '.' + shard + '.unpacked');
-var capnproto = fs.readFileSync(__dirname + '/test/fixtures/big/' + type + '.' + shard + '.unpacked.singleseg');
+var capnproto_packed = fs.readFileSync(__dirname + '/test/fixtures/big/' + type + '.' + shard + '.packed.singleseg');
+var capnproto_unpacked = fs.readFileSync(__dirname + '/test/fixtures/big/' + type + '.' + shard + '.unpacked.singleseg');
 
 console.time('parse json x' + times);
 for (var i = 0; i < times; i++) {
     JSON.parse(json);
+    //console.log(Object.keys(JSON.parse(json)).length);
 }
 console.timeEnd('parse json x' + times);
 
@@ -32,11 +31,20 @@ for (var i = 0; i < times; i++) {
 }
 console.timeEnd(name + times);
 
-var name = 'parse capnproto c++ sync x'
+var name = 'parse capnproto packed c++ sync x'
 console.time(name + times);
 for (var i = 0; i < times; i++) {
-   engine.parseCapnProto(capnproto,{packed:false})
-   //console.log(engine.parseCapnProto(capnproto));
+   engine.parseCapnProto(capnproto_packed,{packed:true})
+   //console.log(Object.keys(engine.parseCapnProto(capnproto_packed,{packed:true})).length);
+}
+console.timeEnd(name + times);
+
+
+var name = 'parse capnproto unpacked c++ sync x'
+console.time(name + times);
+for (var i = 0; i < times; i++) {
+   engine.parseCapnProto(capnproto_unpacked,{packed:false})
+   //console.log(Object.keys(engine.parseCapnProto(capnproto_unpacked,{packed:false})).length);
 }
 console.timeEnd(name + times);
 
@@ -57,5 +65,10 @@ unpacked vs json with js objects:
 	parse json x10: 2624ms
 	parse capnproto c++ sync x10: 2940ms
 	parse proto c++ sync x10: 4764ms
+
+parse json x10: 2139ms
+parse proto c++ sync x10: 4660ms
+parse capnproto packed c++ sync x10: 3375ms
+parse capnproto unpacked c++ sync x10: 3409ms
 
 */
