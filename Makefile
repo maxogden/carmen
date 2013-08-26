@@ -3,7 +3,7 @@ PROTOBUF_LDFLAGS=$(shell pkg-config protobuf --libs-only-L) -lprotobuf-lite
 CXXFLAGS := $(CXXFLAGS) # inherit from env
 LDFLAGS := $(LDFLAGS) # inherit from env
 
-all: mem.node index_pb2.py src/index.pb.cc src/index.capnp.c++ convert
+all: mem.node index_pb2.py src/index.pb.cc src/index.capnp.c++ convert vector
 
 src/index.capnp.c++: index.capnp Makefile
 	capnp compile -oc++:src index.capnp
@@ -13,7 +13,6 @@ convert: convert.c++ Makefile
 	  /Users/dane/projects/node/out/Release/libv8_base.x64.a \
 	  /Users/dane/projects/node/out/Release/libv8_nosnapshot.x64.a \
 	  -std=gnu++11 -stdlib=libc++ -Wall -O3 -DDEBUG convert.c++ src/index.capnp.c++ -lkj -lcapnp -o convert
-	./convert write | ./convert read
 
 index_pb2.py: index.proto Makefile
 	protoc -I./ --python_out=. ./index.proto
@@ -21,8 +20,11 @@ index_pb2.py: index.proto Makefile
 src/index.pb.cc: index.proto Makefile
 	protoc -I./ --cpp_out=./src ./index.proto
 
+vector: vector.c++ Makefile
+	export CXX=$(HOME)/clang-3.2/bin/clang++ && $(CXX) -std=gnu++11 -stdlib=libc++ -Wall -O3 -DDEBUG vector.c++ -o vector
+
 mem.node:
-	export CXX=$(HOME)/clang-3.2/bin/clang++ && `npm explore npm -g -- pwd`/bin/node-gyp-bin/node-gyp build
+	export CXX=$(HOME)/clang-3.2/bin/clang++ && `npm explore npm -g -- pwd`/bin/node-gyp-bin/node-gyp build --verbose --nodedir=/Users/dane/projects/node
 
 clean:
 	@rm -f ./index_pb2.py

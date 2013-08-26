@@ -14,26 +14,30 @@
 
 namespace llmr {
 
-struct pbf {
-	inline pbf(const unsigned char *data, uint32_t length);
-	inline pbf(const char *data, uint32_t length);
-	inline pbf(const std::string& buffer);
+#define FORCEINLINE inline __attribute__((always_inline))
+#define NOINLINE __attribute__((noinline))
+#define PBF_INLINE FORCEINLINE
 
-	inline bool next();
-	inline uint64_t varint();
-	inline int64_t svarint();
-	inline std::string string();
-	inline float float32();
-	inline double float64();
-	inline int64_t int64();
-	inline bool boolean();
+struct pbf {
+	PBF_INLINE pbf(const unsigned char *data, uint32_t length);
+	PBF_INLINE pbf(const char *data, uint32_t length);
+	PBF_INLINE pbf(const std::string& buffer);
+
+	PBF_INLINE bool next();
+	PBF_INLINE uint64_t varint();
+	PBF_INLINE int64_t svarint();
+	PBF_INLINE std::string string();
+	PBF_INLINE float float32();
+	PBF_INLINE double float64();
+	PBF_INLINE int64_t int64();
+	PBF_INLINE bool boolean();
 
 	template <typename T, typename... Args>
-	inline T *message(const Args&... args);
+	PBF_INLINE T *message(const Args&... args);
 
-	inline void skip();
-	inline void skipValue(uint32_t val);
-	inline void skipBytes(uint32_t bytes);
+	PBF_INLINE void skip();
+	PBF_INLINE void skipValue(uint32_t val);
+	PBF_INLINE void skipBytes(uint32_t bytes);
 
 	const uint8_t *data;
 	const uint8_t *end;

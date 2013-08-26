@@ -4,74 +4,9 @@
 #include <iostream>
 #include <fstream>
 #include <v8.h>
+#include "v8_helper.hpp"
 
-// https://groups.google.com/forum/#!msg/v8-users/X1Dtpkgm6eA/cIYLvZBWiOAJ
-
-//using namespace v8;
-
-// Reads a file into a v8 string.
-v8::Handle<v8::String> ReadFile(const std::string& name) {
-  FILE* file = fopen(name.c_str(), "rb");
-  if (file == NULL) return v8::Handle<v8::String>();
-  fseek(file, 0, SEEK_END);
-  int size = ftell(file);
-  if (size < 1) return v8::Handle<v8::String>();
-  rewind(file);
-  char* chars = new char[size + 1];
-  chars[size] = '\0';
-  for (int i = 0; i < size;) {
-    int read = static_cast<int>(fread(&chars[i], 1, size - i, file));
-    i += read;
-  }
-  fclose(file);
-  v8::Handle<v8::String> result = v8::String::New(chars, size);
-  delete[] chars;
-  return result;
-}
-
-// Extracts a C string from a V8 Utf8Value.
-const char* ToCString(const v8::String::Utf8Value& value) {
-  return *value ? *value : "<string conversion failed>";
-}
-
-void ReportException(v8::Isolate* isolate, v8::TryCatch* try_catch) {
-  v8::HandleScope handle_scope(isolate);
-  v8::String::Utf8Value exception(try_catch->Exception());
-  const char* exception_string = ToCString(exception);
-  v8::Handle<v8::Message> message = try_catch->Message();
-  if (message.IsEmpty()) {
-    // V8 didn't provide any extra information about this error; just
-    // print the exception.
-    fprintf(stderr, "%s\n", exception_string);
-  } else {
-    // Print (filename):(line number): (message).
-    v8::String::Utf8Value filename(message->GetScriptResourceName());
-    const char* filename_string = ToCString(filename);
-    int linenum = message->GetLineNumber();
-    fprintf(stderr, "%s:%i: %s\n", filename_string, linenum, exception_string);
-    // Print line of source code.
-    v8::String::Utf8Value sourceline(message->GetSourceLine());
-    const char* sourceline_string = ToCString(sourceline);
-    fprintf(stderr, "%s\n", sourceline_string);
-    // Print wavy underline (GetUnderline is deprecated).
-    int start = message->GetStartColumn();
-    for (int i = 0; i < start; i++) {
-      fprintf(stderr, " ");
-    }
-    int end = message->GetEndColumn();
-    for (int i = start; i < end; i++) {
-      fprintf(stderr, "^");
-    }
-    fprintf(stderr, "\n");
-    v8::String::Utf8Value stack_trace(try_catch->StackTrace());
-    if (stack_trace.length() > 0) {
-      const char* stack_trace_string = ToCString(stack_trace);
-      fprintf(stderr, "%s\n", stack_trace_string);
-    }
-  }
-}
-
-int writeJSON(v8::Isolate* isolate,const char * json_file) {
+int writeJSON(v8::Isolate* isolate,const char * json_file, bool packed=false) {
     v8::HandleScope handle_scope(isolate);
     v8::Handle<v8::ObjectTemplate> global = v8::ObjectTemplate::New();
     v8::Handle<v8::Context> context = v8::Context::New(isolate, NULL, global);
@@ -85,6 +20,7 @@ int writeJSON(v8::Isolate* isolate,const char * json_file) {
     if (!source.IsEmpty()) {
         v8::Handle<v8::Object> global_obj = context->Global();
         v8::Handle<v8::Object> JSON = global_obj->Get(v8::String::New("JSON"))->ToObject();
+        // https://groups.google.com/forum/#!msg/v8-users/X1Dtpkgm6eA/cIYLvZBWiOAJ
         v8::Handle<v8::Function> JSON_parse = v8::Handle<v8::Function>::Cast(JSON->Get(v8::String::New("parse")));
         v8::Handle<v8::Value> string_val(source);
         v8::Handle<v8::Value> json = JSON_parse->Call(JSON, 1, &string_val);
@@ -95,7 +31,10 @@ int writeJSON(v8::Isolate* isolate,const char * json_file) {
             v8::Local<v8::Object> obj = json.As<v8::Object>();
             v8::Local<v8::Array> propertyNames = obj->GetPropertyNames();
             uint32_t prop_len = propertyNames->Length();
-            ::capnp::MallocMessageBuilder message;
+            // create message builder
+            uint firstSegmentWords = 1024*1024*1024;
+            ::capnp::AllocationStrategy allocationStrategy = ::capnp::SUGGESTED_ALLOCATION_STRATEGY;
+            ::capnp::MallocMessageBuilder message(firstSegmentWords,allocationStrategy);
             carmen::Message::Builder msg = message.initRoot<carmen::Message>();
             ::capnp::List<carmen::Item>::Builder items = msg.initItems(prop_len);
             for (int i=0;i < prop_len;++i) {
@@ -124,7 +63,15 @@ int writeJSON(v8::Isolate* isolate,const char * json_file) {
                     }
                 }
             }
-            writePackedMessageToFd(1, message);
+            // TODO: better, after message creation method of creating single segment message:
+            // https://github.com/kentonv/capnproto/blob/2088715c3214dba4aa54abf95dacc227b3f34856/c%2B%2B/src/capnp/compiler/capnp.c%2B%2B#L644-L661
+            kj::ArrayPtr<const kj::ArrayPtr<const ::capnp::word>> segs = message.getSegmentsForOutput();
+            std::clog << "num segments: " << segs.size() << "\n";
+            if (packed) {
+              writePackedMessageToFd(1, message);
+            } else {
+              writeMessageToFd(1, message);
+            }
         }
     }
     if (try_catch.HasCaught()) {
@@ -134,7 +81,7 @@ int writeJSON(v8::Isolate* isolate,const char * json_file) {
     return 0;
   }
 
-void writeMessage(int fd) {
+void writeMessage(int fd, bool packed=false) {
   ::capnp::MallocMessageBuilder message;
   carmen::Message::Builder msg = message.initRoot<carmen::Message>();
   ::capnp::List<carmen::Item>::Builder items = msg.initItems(1);
@@ -147,12 +94,26 @@ void writeMessage(int fd) {
   vals.set(0,1);
   vals.set(1,2);
   vals.set(2,3);
-  writePackedMessageToFd(fd, message);
+  kj::ArrayPtr<const kj::ArrayPtr<const ::capnp::word>> segs = message.getSegmentsForOutput();
+  std::clog << "num segments: " << segs.size() << "\n";
+  if (packed) {
+    writePackedMessageToFd(fd, message);
+  } else {
+    writeMessageToFd(fd, message);
+  }
+  // TODO - can messageToFlatArray ensure a single segment?
+  //::kj::Array<::capnp::word> seg = messageToFlatArray(message);
 }
 
-void printMessage(int fd) {
-  ::capnp::PackedFdMessageReader message(fd);
-  carmen::Message::Reader msg = message.getRoot<carmen::Message>();
+void printMessage(int fd,bool packed=false) {
+  carmen::Message::Reader msg;
+  if (packed) {
+      ::capnp::PackedFdMessageReader message(fd);
+      msg = message.getRoot<carmen::Message>();
+  } else {
+      ::capnp::StreamFdMessageReader message(fd);
+      msg = message.getRoot<carmen::Message>();
+  }
   auto msg_size = msg.getItems().size();
   uint32_t msg_idx = 0;
   std::cout << "{";
@@ -192,13 +153,17 @@ int main(int argc, char* argv[]) {
     std::cerr << "Missing arg." << std::endl;
     return 1;
   } else if (strcmp(argv[1], "write") == 0) {
-    writeMessage(1);
+    writeMessage(1,false);
+  } else if (strcmp(argv[1], "pwrite") == 0) {
+    writeMessage(1,true);
   } else if (strcmp(argv[1], "read") == 0) {
-    printMessage(0);
+    printMessage(0,false);
+  } else if (strcmp(argv[1], "pread") == 0) {
+    printMessage(0,true);
   } else {
     v8::V8::InitializeICU();
     v8::Isolate* isolate = v8::Isolate::GetCurrent();
-    int ret = writeJSON(isolate,argv[1]);
+    int ret = writeJSON(isolate,argv[1],true);
     v8::V8::Dispose();
     return ret;
   }
