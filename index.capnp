@@ -11,7 +11,7 @@ struct Array {
 
 struct Item {
   arrays @0:List(Array);
-  key @1:Text;
+  key @1:UInt64;
 }
 
 struct Message {

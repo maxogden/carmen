@@ -234,6 +234,7 @@ NAN_METHOD(Engine::parseCapnProto)
             auto item = items[i];
             auto array = item.getArrays();
             unsigned array_size = array.size();
+            //std::clog << "array_size " << array_size << "\n";
             #ifdef CREATE_JS_OBJ
             Local<Array> arr_obj = Array::New(array_size);
             #endif
@@ -254,7 +255,7 @@ NAN_METHOD(Engine::parseCapnProto)
                 #endif
             }
             #ifdef CREATE_JS_OBJ
-            json->Set(String::New(item.getKey().cStr()),arr_obj);
+            json->Set(Number::New(item.getKey()),arr_obj);
             #endif
         }
     } catch (std::exception const& ex) {
@@ -290,6 +291,7 @@ NAN_METHOD(Engine::parseProto)
         while (message.next()) {
             if (message.tag == 1) {
                 uint32_t bytes = message.varint();
+                //std::clog << "bytes: " << bytes << "\n";
                 llmr::pbf item(message.data, bytes);
                 #ifdef CREATE_JS_OBJ
                 Local<Array> val_array = Array::New();

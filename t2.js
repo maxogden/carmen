@@ -2,7 +2,7 @@ var fs = require('fs');
 var mem = require('./lib/mem.node');
 var type = 'grid';
 var shard = 0;
-var times = 10;
+var times = 1;
 
 /*
 preload for fast case
@@ -35,7 +35,7 @@ console.timeEnd(name + times);
 var name = 'parse capnproto c++ sync x'
 console.time(name + times);
 for (var i = 0; i < times; i++) {
-   //engine.parseCapnProto(capnproto,{packed:false})
+   engine.parseCapnProto(capnproto,{packed:false})
    //console.log(engine.parseCapnProto(capnproto));
 }
 console.timeEnd(name + times);
@@ -56,5 +56,6 @@ no js / packed: parse capnproto c++ sync x100: 2378ms
 unpacked vs json with js objects:
 	parse json x10: 2624ms
 	parse capnproto c++ sync x10: 2940ms
+	parse proto c++ sync x10: 4764ms
 
 */

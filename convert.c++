@@ -42,8 +42,8 @@ int writeJSON(v8::Isolate* isolate,const char * json_file, bool packed=false) {
                 v8::Local<v8::Value> prop = obj->Get(key);
                 if (prop->IsArray()) {
                     carmen::Item::Builder item = items[i];
-                    v8::String::Utf8Value name(key->ToString());
-                    item.setKey(*name);
+                    //v8::String::Utf8Value name(key->ToString());
+                    item.setKey(key->NumberValue());
                     v8::Local<v8::Array> arr = v8::Local<v8::Array>::Cast(prop);
                     uint32_t arr_len = arr->Length();
                     auto arrays = item.initArrays(arr_len);
@@ -86,7 +86,7 @@ void writeMessage(int fd, bool packed=false) {
   carmen::Message::Builder msg = message.initRoot<carmen::Message>();
   ::capnp::List<carmen::Item>::Builder items = msg.initItems(1);
   carmen::Item::Builder item = items[0];
-  item.setKey("hello");
+  item.setKey(1 << 32);
   // Type shown for explanation purposes; normally you'd use auto.
   ::capnp::List<carmen::Array>::Builder arrays = item.initArrays(1);
   carmen::Array::Builder arr = arrays[0];
@@ -118,7 +118,7 @@ void printMessage(int fd,bool packed=false) {
   uint32_t msg_idx = 0;
   std::cout << "{";
   for (carmen::Item::Reader item : msg.getItems()) {
-    std::cout << "\"" << item.getKey().cStr() << "\":[";
+    std::cout << "\"" << item.getKey() << "\":[";
     auto item_size = item.getArrays().size();
     uint32_t item_idx = 0;
     for (carmen::Array::Reader array: item.getArrays()) {
@@ -163,7 +163,7 @@ int main(int argc, char* argv[]) {
   } else {
     v8::V8::InitializeICU();
     v8::Isolate* isolate = v8::Isolate::GetCurrent();
-    int ret = writeJSON(isolate,argv[1],true);
+    int ret = writeJSON(isolate,argv[1],false);
     v8::V8::Dispose();
     return ret;
   }
