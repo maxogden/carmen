@@ -17,6 +17,7 @@
 #include "index.capnp.h"
 #include <capnp/message.h>
 #include <capnp/serialize-packed.h>
+#include "capnproto_helper.hpp"
 
 // https://github.com/jasondelponte/go-v8/blob/master/src/v8context.cc#L41
 // http://v8.googlecode.com/svn/trunk/test/cctest/test-threads.cc
@@ -30,7 +31,7 @@ namespace node_mem {
 
 using namespace v8;
 
-class Engine: public node::ObjectWrap {
+class Cache: public node::ObjectWrap {
 public:
     static Persistent<FunctionTemplate> constructor;
     static void Initialize(Handle<Object> target);
@@ -39,40 +40,40 @@ public:
     static NAN_METHOD(parseCapnProto);
     static void AsyncRun(uv_work_t* req);
     static void AfterRun(uv_work_t* req);
-    Engine();
+    Cache();
     void _ref() { Ref(); }
     void _unref() { Unref(); }
 private:
-    ~Engine();
+    ~Cache();
 };
 
-Persistent<FunctionTemplate> Engine::constructor;
+Persistent<FunctionTemplate> Cache::constructor;
 
-void Engine::Initialize(Handle<Object> target) {
+void Cache::Initialize(Handle<Object> target) {
     NanScope();
-    Local<FunctionTemplate> t = FunctionTemplate::New(Engine::New);
+    Local<FunctionTemplate> t = FunctionTemplate::New(Cache::New);
     t->InstanceTemplate()->SetInternalFieldCount(1);
-    t->SetClassName(String::NewSymbol("Engine"));
+    t->SetClassName(String::NewSymbol("Cache"));
     NODE_SET_PROTOTYPE_METHOD(t, "parseProto", parseProto);
     NODE_SET_PROTOTYPE_METHOD(t, "parseCapnProto", parseCapnProto);
-    target->Set(String::NewSymbol("Engine"),t->GetFunction());
+    target->Set(String::NewSymbol("Cache"),t->GetFunction());
     NanAssignPersistent(FunctionTemplate, constructor, t);
 }
 
-Engine::Engine()
+Cache::Cache()
   : ObjectWrap()
     { }
 
-Engine::~Engine() { }
+Cache::~Cache() { }
 
-NAN_METHOD(Engine::New)
+NAN_METHOD(Cache::New)
 {
     NanScope();
     if (!args.IsConstructCall()) {
         return NanThrowTypeError("Cannot call constructor as function, you need to use 'new' keyword");
     }
     try {
-        Engine* im = new Engine();
+        Cache* im = new Cache();
         im->Wrap(args.This());
         NanReturnValue(args.This());
     } catch (std::exception const& ex) {
@@ -81,80 +82,8 @@ NAN_METHOD(Engine::New)
     NanReturnValue(Undefined());
 }
 
-class BufferStream: public ::kj::BufferedInputStream {
-public:
-  BufferStream(const char * data, size_t size)
-      : data_(data),
-        size_(size),
-        preferredReadSize(std::numeric_limits<size_t>::max()),
-        readPos(0) {}
-  ~BufferStream() {}
 
-  size_t tryRead(void* buffer, size_t minBytes, size_t maxBytes) override {
-    //kj::KJ_ASSERT(maxBytes <= size_ - readPos, "Overran end of stream.");
-    size_t amount = std::min(maxBytes, std::max(minBytes, preferredReadSize));
-    memcpy(buffer, data_ + readPos, amount);
-    readPos += amount;
-    return amount;
-  }
-
-  void skip(size_t bytes) override {
-    //kj::KJ_ASSERT(bytes <= size_ - readPos, "Overran end of stream.");
-    readPos += bytes;
-  }
-
-  kj::ArrayPtr<const kj::byte> tryGetReadBuffer() override {
-    size_t amount = std::min(size_ - readPos, preferredReadSize);
-    return kj::arrayPtr(reinterpret_cast<const kj::byte*>(data_ + readPos), amount);
-  }
-
-private:
-  const char * data_;
-  size_t size_;
-  size_t preferredReadSize;
-  std::string::size_type readPos;
-};
-
-class UnBufferedStream: public ::kj::InputStream {
-public:
-  UnBufferedStream(const char * data, size_t size, bool lazy=false)
-      : data_(data),
-        size_(size),
-        lazy_(lazy),
-        readPos_(0) {}
-  ~UnBufferedStream() {}
-
-  size_t tryRead(void* buffer, size_t minBytes, size_t maxBytes) override {
-    //KJ_ASSERT(maxBytes <= size_t(end - pos), "Overran end of stream.");
-    size_t amount = lazy_ ? minBytes : maxBytes;
-    memcpy(buffer, data_ + readPos_, amount);
-    readPos_ += amount;
-    return amount;
-  }
-private:
-  const char * data_;
-  size_t size_;
-  bool lazy_;
-  size_t readPos_;
-};
-
-static constexpr uint32_t max_32_int = std::numeric_limits<uint32_t>::max();
-
-//#define CREATE_JS_OBJ
-constexpr size_t SCRATCH_SIZE = 128 * 1024;
-::capnp::word scratchSpace[6 * SCRATCH_SIZE];
-
-struct ScratchSpace {
-    ::capnp::word* words;
-
-    ScratchSpace() {
-      words = scratchSpace + SCRATCH_SIZE;
-    }
-    ~ScratchSpace() noexcept {
-    }
-};
-
-NAN_METHOD(Engine::parseCapnProto)
+NAN_METHOD(Cache::parseCapnProto)
 {
     NanScope();
     if (args.Length() < 1) {
@@ -272,7 +201,7 @@ NAN_METHOD(Engine::parseCapnProto)
     NanReturnValue(json);
 }
 
-NAN_METHOD(Engine::parseProto)
+NAN_METHOD(Cache::parseProto)
 {
     NanScope();
     if (args.Length() < 1) {
@@ -355,7 +284,7 @@ NAN_METHOD(Engine::parseProto)
 
 extern "C" {
     static void start(Handle<Object> target) {
-        Engine::Initialize(target);
+        Cache::Initialize(target);
     }
 }
 
