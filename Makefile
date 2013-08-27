@@ -3,7 +3,7 @@ PROTOBUF_LDFLAGS=$(shell pkg-config protobuf --libs-only-L) -lprotobuf-lite
 CXXFLAGS := $(CXXFLAGS) # inherit from env
 LDFLAGS := $(LDFLAGS) # inherit from env
 
-all: mem.node index_pb2.py src/index.pb.cc src/index.capnp.c++ src/flat-array.capnp.c++ convert vector 
+all: index_pb2.py src/index.pb.cc src/index.capnp.c++ src/flat-array.capnp.c++ mem.node convert vector 
 
 src/index.capnp.c++: index.capnp Makefile
 	capnp compile -oc++:src index.capnp
@@ -27,7 +27,7 @@ vector: vector.c++ Makefile
 	$(HOME)/clang-3.2/bin/clang++ -std=gnu++11 -stdlib=libc++ -Wall -O3 -DDEBUG vector.c++ src/flat-array.capnp.c++ -lkj -lcapnp -o vector
 
 mem.node:
-	export CXX=$(HOME)/clang-3.2/bin/clang++ && `npm explore npm -g -- pwd`/bin/node-gyp-bin/node-gyp build --verbose --nodedir=/Users/dane/projects/node
+	export CXX=$(HOME)/clang-3.2/bin/clang++ && `npm explore npm -g -- pwd`/bin/node-gyp-bin/node-gyp build --verbose
 
 clean:
 	@rm -f ./index_pb2.py
@@ -44,7 +44,7 @@ rebuild:
 	@make
 
 test:
-	export NODE_PATH=./lib && npm test
+	./node_modules/.bin/mocha test/cache.test.js
 
 check: test
 
