@@ -21,7 +21,7 @@ for (var i = 0; i < times; i++) {
 }
 console.timeEnd('parse json x' + times);
 
-var engine = new mem.Engine();
+var engine = new mem.Cache();
 
 var name = 'parse proto c++ sync x'
 console.time(name + times);
