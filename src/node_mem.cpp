@@ -25,11 +25,15 @@
 #define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h> 
+#include <string.h>
+#include <map>
 
 namespace node_mem {
 
 using namespace v8;
+
+typedef std::map<std::string,std::string> memcache;
+typedef memcache::const_iterator mem_iterator_type;
 
 class Cache: public node::ObjectWrap {
 public:
@@ -38,13 +42,19 @@ public:
     static NAN_METHOD(New);
     static NAN_METHOD(parseProto);
     static NAN_METHOD(parseCapnProto);
+    static NAN_METHOD(has);
+    static NAN_METHOD(load);
+    static NAN_METHOD(search);
     static void AsyncRun(uv_work_t* req);
     static void AfterRun(uv_work_t* req);
-    Cache();
+    Cache(std::string const& id,int shardlevel);
     void _ref() { Ref(); }
     void _unref() { Unref(); }
 private:
     ~Cache();
+    std::string id_;
+    int shardlevel_;
+    memcache cache_;
 };
 
 Persistent<FunctionTemplate> Cache::constructor;
@@ -56,15 +66,145 @@ void Cache::Initialize(Handle<Object> target) {
     t->SetClassName(String::NewSymbol("Cache"));
     NODE_SET_PROTOTYPE_METHOD(t, "parseProto", parseProto);
     NODE_SET_PROTOTYPE_METHOD(t, "parseCapnProto", parseCapnProto);
+    NODE_SET_PROTOTYPE_METHOD(t, "has", has);
+    NODE_SET_PROTOTYPE_METHOD(t, "load", load);
+    NODE_SET_PROTOTYPE_METHOD(t, "search", search);
     target->Set(String::NewSymbol("Cache"),t->GetFunction());
     NanAssignPersistent(FunctionTemplate, constructor, t);
 }
 
-Cache::Cache()
-  : ObjectWrap()
+Cache::Cache(std::string const& id, int shardlevel)
+  : ObjectWrap(),
+    id_(id),
+    shardlevel_(shardlevel),
+    cache_()
     { }
 
 Cache::~Cache() { }
+
+NAN_METHOD(Cache::load)
+{
+    NanScope();
+    if (args.Length() < 3) {
+        return NanThrowTypeError("expected three args: 'buffer',type','shard'");
+    }
+    if (!args[0]->IsObject()) {
+        return NanThrowTypeError("first argument must be a buffer");
+    }
+    Local<Object> obj = args[0]->ToObject();
+    if (obj->IsNull() || obj->IsUndefined()) {
+        return NanThrowTypeError("a buffer expected for first argument");
+    }
+    if (!node::Buffer::HasInstance(obj)) {
+        return NanThrowTypeError("first argument must be a buffer");
+    }
+    if (!args[1]->IsString()) {
+        return NanThrowTypeError("second arg 'type' must be a string");
+    }
+    if (!args[2]->IsNumber()) {
+        return NanThrowTypeError("third arg 'shard' must be an Integer");
+    }
+    Cache* c = node::ObjectWrap::Unwrap<Cache>(args.This());
+    memcache & mem = c->cache_;
+    const char * cdata = node::Buffer::Data(obj);
+    size_t size = node::Buffer::Length(obj);
+    std::string type = *String::Utf8Value(args[1]->ToString());
+    std::string shard = *String::Utf8Value(args[2]->ToString());
+    std::string key = type + "-" + shard;
+    c->cache_.emplace(key,std::string(cdata,size));
+
+/*
+    if (!args[args.Length()-1]->IsFunction())
+        return NanThrowTypeError("last argument must be a callback function");
+    auto cb = Handle<Function>::Cast(args[args.Length()-1]);
+    Local<Value> argv[1] = { Local<Value>::New(Null()) };
+    cb->Call(Context::GetCurrent()->Global(), 1, argv);
+*/
+    NanReturnValue(Undefined());
+}
+
+NAN_METHOD(Cache::has)
+{
+    NanScope();
+    if (args.Length() < 2) {
+        return NanThrowTypeError("expected two args: type and shard");
+    }
+    if (!args[0]->IsString()) {
+        return NanThrowTypeError("first arg must be a string");
+    }
+    if (!args[1]->IsNumber()) {
+        return NanThrowTypeError("second arg must be an integer");
+    }
+    std::string type = *String::Utf8Value(args[0]->ToString());
+    std::string shard = *String::Utf8Value(args[1]->ToString());
+    std::string key = type + "-" + shard;
+    Cache* c = node::ObjectWrap::Unwrap<Cache>(args.This());
+    memcache const& mem = c->cache_;
+    mem_iterator_type itr = mem.find(key);
+    if (itr != mem.end()) {
+        NanReturnValue(True());
+    } else {
+        NanReturnValue(False());
+    }
+}
+
+NAN_METHOD(Cache::search)
+{
+    NanScope();
+    if (args.Length() < 3) {
+        return NanThrowTypeError("expected two args: type, shard, and id");
+    }
+    if (!args[0]->IsString()) {
+        return NanThrowTypeError("first arg must be a string");
+    }
+    if (!args[1]->IsNumber()) {
+        return NanThrowTypeError("second arg must be an integer");
+    }
+    if (!args[2]->IsNumber()) {
+        return NanThrowTypeError("third arg must be an integer");
+    }
+    try {
+        std::string type = *String::Utf8Value(args[0]->ToString());
+        std::string shard = *String::Utf8Value(args[1]->ToString());
+        uint64_t id = args[2]->NumberValue();
+        std::string key = type + "-" + shard;
+        Cache* c = node::ObjectWrap::Unwrap<Cache>(args.This());
+        memcache const& mem = c->cache_;
+        mem_iterator_type itr = mem.find(key);
+        if (itr == mem.end()) {
+            NanReturnValue(Undefined());
+        } else {
+            BufferStream pipe(itr->second.data(),itr->second.size());
+            ::capnp::PackedMessageReader reader(pipe);
+            auto msg = reader.getRoot<carmen::Message>();
+            auto items = msg.getItems();
+            unsigned items_size = items.size();
+            for (unsigned i=0;i<items_size;++i) {
+                auto item = items[i];
+                uint64_t key_id = item.getKey();
+                if (key_id == id) {
+                    auto array = item.getArrays();
+                    unsigned array_size = array.size();
+                    Local<Array> arr_obj = Array::New(array_size);
+                    for (unsigned j=0;j<array_size;++j) {
+                        auto arr = array[j];
+                        auto vals = arr.getVal();
+                        unsigned vals_size = vals.size();
+                        Local<Array> vals_obj = Array::New(vals_size);
+                        for (unsigned k=0;k<vals_size;++k) {
+                            vals_obj->Set(k,Number::New(vals[k]));
+                        }
+                        arr_obj->Set(j,vals_obj);
+                    }
+                    NanReturnValue(arr_obj);
+                }
+            }
+            NanReturnValue(Undefined());
+        }
+    } catch (std::exception const& ex) {
+        return NanThrowTypeError(ex.what());
+    }
+}
 
 NAN_METHOD(Cache::New)
 {
@@ -73,8 +213,21 @@ NAN_METHOD(Cache::New)
         return NanThrowTypeError("Cannot call constructor as function, you need to use 'new' keyword");
     }
     try {
-        Cache* im = new Cache();
+        if (args.Length() < 2) {
+            return NanThrowTypeError("expected 'id' and 'shardlevel' arguments");
+        }
+        if (!args[0]->IsString()) {
+            return NanThrowTypeError("first argument 'id' must be a string");
+        }
+        if (!args[1]->IsNumber()) {
+            return NanThrowTypeError("first argument 'shardlevel' must be a number");
+        }
+        std::string id = *String::Utf8Value(args[0]->ToString());
+        int shardlevel = args[1]->IntegerValue();
+        Cache* im = new Cache(id,shardlevel);
         im->Wrap(args.This());
+        args.This()->Set(String::NewSymbol("id"),args[0]);
+        args.This()->Set(String::NewSymbol("shardlevel"),args[1]);
         NanReturnValue(args.This());
     } catch (std::exception const& ex) {
         return NanThrowTypeError(ex.what());
@@ -89,11 +242,9 @@ NAN_METHOD(Cache::parseCapnProto)
     if (args.Length() < 1) {
         return NanThrowTypeError("first argument must be a buffer");
     }
-
     if (!args[0]->IsObject()) {
         return NanThrowTypeError("first argument must be a buffer");
     }
-
     Local<Object> obj = args[0]->ToObject();
     if (obj->IsNull() || obj->IsUndefined()) {
         return NanThrowTypeError("a buffer expected for first argument");
@@ -116,7 +267,6 @@ NAN_METHOD(Cache::parseCapnProto)
                 return NanThrowTypeError("optional arg 'packed' must be a boolean");
             packed = packed_opt->BooleanValue();
         }
-
     }
     Local<Object> json = Object::New();
     try {
@@ -160,18 +310,15 @@ NAN_METHOD(Cache::parseCapnProto)
 
         auto items = msg.getItems();
         unsigned items_size = items.size();
-        //std::clog << "items: " << items_size << "\n";
         for (unsigned i=0;i<items_size;++i) {
             auto item = items[i];
             auto array = item.getArrays();
             unsigned array_size = array.size();
-            //std::clog << "array_size " << array_size << "\n";
             #ifdef CREATE_JS_OBJ
-            // Int32Array
             Local<Array> arr_obj = Array::New(array_size);
             #endif
             for (unsigned j=0;j<array_size;++j) {
-                auto arr = array[0];
+                auto arr = array[j];
                 auto vals = arr.getVal();
                 unsigned vals_size = vals.size();
                 #ifdef CREATE_JS_OBJ
@@ -228,7 +375,6 @@ NAN_METHOD(Cache::parseProto)
         while (message.next()) {
             if (message.tag == 1) {
                 uint32_t bytes = message.varint();
-                //std::clog << "bytes: " << bytes << "\n";
                 llmr::pbf item(message.data, bytes);
                 #ifdef CREATE_JS_OBJ
                 Local<Array> val_array = Array::New();
