@@ -140,7 +140,7 @@ private:
 
 static constexpr uint32_t max_32_int = std::numeric_limits<uint32_t>::max();
 
-#define CREATE_JS_OBJ
+//#define CREATE_JS_OBJ
 constexpr size_t SCRATCH_SIZE = 128 * 1024;
 ::capnp::word scratchSpace[6 * SCRATCH_SIZE];
 

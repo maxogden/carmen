@@ -2,7 +2,7 @@ var fs = require('fs');
 var mem = require('./lib/mem.node');
 var type = 'grid';
 var shard = 0;
-var times = 100;
+var times = 10;
 
 /*
 preload for fast case
