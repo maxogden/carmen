@@ -163,7 +163,7 @@ int main(int argc, char* argv[]) {
   } else {
     v8::V8::InitializeICU();
     v8::Isolate* isolate = v8::Isolate::GetCurrent();
-    int ret = writeJSON(isolate,argv[1],false);
+    int ret = writeJSON(isolate,argv[1],true);
     v8::V8::Dispose();
     return ret;
   }
