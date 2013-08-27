@@ -20,6 +20,11 @@ convert: convert.c++ Makefile
 index_pb2.py: index.proto Makefile
 	protoc -I./ --python_out=. ./index.proto
 
+dump:
+	cat test/fixtures/grid.0.packed | capnp decode index.capnp Message -p > test/fixtures/grid.0.packed.dump
+	cat test/fixtures/grid.1.packed | capnp decode index.capnp Message -p > test/fixtures/grid.1.packed.dump
+	cat test/fixtures/grid.2.packed | capnp decode index.capnp Message -p > test/fixtures/grid.2.packed.dump
+
 src/index.pb.cc: index.proto Makefile
 	protoc -I./ --cpp_out=./src ./index.proto
 
