@@ -27,12 +27,16 @@
 #include <stdlib.h>
 #include <string.h>
 #include <map>
+#include <vector>
 
 namespace node_mem {
 
 using namespace v8;
 
-typedef std::map<std::string,std::string> memcache;
+typedef std::vector<std::vector<uint64_t>> varray;
+typedef std::map<uint64_t,varray> arraycache;
+typedef arraycache::const_iterator arr_iterator;
+typedef std::map<std::string,arraycache> memcache;
 typedef memcache::const_iterator mem_iterator_type;
 
 class Cache: public node::ObjectWrap {
@@ -111,7 +115,33 @@ NAN_METHOD(Cache::load)
     std::string type = *String::Utf8Value(args[1]->ToString());
     std::string shard = *String::Utf8Value(args[2]->ToString());
     std::string key = type + "-" + shard;
-    c->cache_.emplace(key,std::string(cdata,size));
+    c->cache_.emplace(key,arraycache());
+    arraycache & arrc = c->cache_[key];
+    BufferStream pipe(cdata,size);
+    ::capnp::PackedMessageReader reader(pipe);
+    auto msg = reader.getRoot<carmen::Message>();
+    auto items = msg.getItems();
+    unsigned items_size = items.size();
+    for (unsigned i=0;i<items_size;++i) {
+        auto item = items[i];
+        uint64_t key_id = item.getKey();
+        arrc.emplace(key_id,varray());
+        varray & vv = arrc[key_id];
+        auto array = item.getArrays();
+        unsigned array_size = array.size();
+        vv.reserve(array_size);
+        for (unsigned j=0;j<array_size;++j) {
+            auto arr = array[j];
+            auto vals = arr.getVal();
+            unsigned vals_size = vals.size();
+            vv.emplace_back(std::vector<uint64_t>());
+            std::vector<uint64_t> & vvals = vv.back();
+            vvals.reserve(vals_size);
+            for (unsigned k=0;k<vals_size;++k) {
+                vvals.emplace_back(vals[k]);
+            }
+        }
+    }
 
 /*
     if (!args[args.Length()-1]->IsFunction())
@@ -174,32 +204,24 @@ NAN_METHOD(Cache::search)
         if (itr == mem.end()) {
             NanReturnValue(Undefined());
         } else {
-            BufferStream pipe(itr->second.data(),itr->second.size());
-            ::capnp::PackedMessageReader reader(pipe);
-            auto msg = reader.getRoot<carmen::Message>();
-            auto items = msg.getItems();
-            unsigned items_size = items.size();
-            for (unsigned i=0;i<items_size;++i) {
-                auto item = items[i];
-                uint64_t key_id = item.getKey();
-                if (key_id == id) {
-                    auto array = item.getArrays();
-                    unsigned array_size = array.size();
-                    Local<Array> arr_obj = Array::New(array_size);
-                    for (unsigned j=0;j<array_size;++j) {
-                        auto arr = array[j];
-                        auto vals = arr.getVal();
-                        unsigned vals_size = vals.size();
-                        Local<Array> vals_obj = Array::New(vals_size);
-                        for (unsigned k=0;k<vals_size;++k) {
-                            vals_obj->Set(k,Number::New(vals[k]));
-                        }
-                        arr_obj->Set(j,vals_obj);
+            arr_iterator aitr = itr->second.find(id);
+            if (aitr == itr->second.end()) {
+                NanReturnValue(Undefined());
+            } else {
+                auto const& array = aitr->second;
+                unsigned array_size = array.size();
+                Local<Array> arr_obj = Array::New(array_size);
+                for (unsigned j=0;j<array_size;++j) {
+                    auto arr = array[j];
+                    unsigned vals_size = arr.size();
+                    Local<Array> vals_obj = Array::New(vals_size);
+                    for (unsigned k=0;k<vals_size;++k) {
+                        vals_obj->Set(k,Number::New(arr[k]));
                     }
-                    NanReturnValue(arr_obj);
+                    arr_obj->Set(j,vals_obj);
                 }
+                NanReturnValue(arr_obj);
             }
-            NanReturnValue(Undefined());
         }
     } catch (std::exception const& ex) {
         return NanThrowTypeError(ex.what());
