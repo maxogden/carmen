@@ -78,7 +78,7 @@ void Cache::Initialize(Handle<Object> target) {
     NODE_SET_PROTOTYPE_METHOD(t, "search", search);
     NODE_SET_PROTOTYPE_METHOD(t, "pack", pack);
     NODE_SET_PROTOTYPE_METHOD(t, "list", list);
-    NODE_SET_PROTOTYPE_METHOD(t, "set", set);
+    NODE_SET_PROTOTYPE_METHOD(t, "_set", set);
     target->Set(String::NewSymbol("Cache"),t->GetFunction());
     NanAssignPersistent(FunctionTemplate, constructor, t);
 }
@@ -102,15 +102,110 @@ NAN_METHOD(Cache::pack)
 NAN_METHOD(Cache::list)
 {
     NanScope();
-    // type, shard
+    // type, shard (optional)
+/*
+Cache.prototype.list = function(type, shard) {
+    return shard === undefined
+        ? Object.keys(this[type])
+        : Object.keys(this[type][shard]);
+};
+*/
+    if (args.Length() < 1) {
+        return NanThrowTypeError("expected at least one arg: 'type' + optional 'shard'");
+    }
+    if (!args[0]->IsString()) {
+        return NanThrowTypeError("first argument must be a string");
+    }
+    std::string type = *String::Utf8Value(args[0]->ToString());
+    Cache* c = node::ObjectWrap::Unwrap<Cache>(args.This());
+    memcache & mem = c->cache_;
     Local<Array> ids = Array::New();
-    NanReturnValue(ids);
+    if (args.Length() == 1) {
+        mem_iterator_type itr = mem.begin();
+        mem_iterator_type end = mem.end();
+        unsigned idx = 0;
+        while (itr != end) {
+            if (itr->first.size() > type.size() && itr->first.substr(0,type.size()) == type) {
+                std::string shard = itr->first.substr(type.size()+1,itr->first.size());
+                ids->Set(idx++,Number::New(String::New(shard.c_str())->NumberValue()));
+            }
+            ++itr;
+        }
+        NanReturnValue(ids);
+    } else if (args.Length() == 2) {
+        std::string shard = *String::Utf8Value(args[1]->ToString());
+        std::string key = type + "-" + shard;
+        mem_iterator_type itr = mem.find(key);
+        if (itr != mem.end()) {
+            arr_iterator aitr = itr->second.begin();
+            arr_iterator aend = itr->second.end();
+            unsigned idx = 0;
+            while (aitr != aend) {
+                ids->Set(idx++,Number::New(aitr->first));
+                ++aitr;
+            }
+            NanReturnValue(ids);
+        }
+    }
+    NanReturnValue(Undefined());
 }
 
 NAN_METHOD(Cache::set)
 {
     NanScope();
     // type, id, data
+    if (args.Length() < 3) {
+        return NanThrowTypeError("expected three args: 'type','shard','id','data'");
+    }
+    if (!args[0]->IsString()) {
+        return NanThrowTypeError("first argument must be a string");
+    }
+    if (!args[1]->IsNumber()) {
+        return NanThrowTypeError("second arg must be an integer");
+    }
+    if (!args[2]->IsNumber()) {
+        return NanThrowTypeError("third arg must be an integer");
+    }
+    if (!args[3]->IsArray()) {
+        return NanThrowTypeError("fourth arg must be an array");
+    }
+    Local<Array> data = Local<Array>::Cast(args[3]);
+    if (data->IsNull() || data->IsUndefined()) {
+        return NanThrowTypeError("an array expected for third argument");
+    }
+    std::string type = *String::Utf8Value(args[0]->ToString());
+    std::string shard = *String::Utf8Value(args[1]->ToString());
+    std::string key = type + "-" + shard;
+    Cache* c = node::ObjectWrap::Unwrap<Cache>(args.This());
+    memcache & mem = c->cache_;
+    // TODO - what if already exists?
+    c->cache_.emplace(key,arraycache());
+    arraycache & arrc = c->cache_[key];
+    uint64_t key_id = args[2]->NumberValue();
+    // TODO - what if already exists?
+    arrc.emplace(key_id,varray());
+    varray & vv = arrc[key_id];
+    unsigned array_size = data->Length();
+    if (type == "grid") {
+        vv.reserve(array_size);
+        for (unsigned i=0;i<array_size;++i) {
+            vv.emplace_back(std::vector<uint64_t>());
+            std::vector<uint64_t> & vvals = vv.back();
+            Local<Array> subarray = Local<Array>::Cast(data->Get(i));
+            unsigned vals_size = subarray->Length();
+            vvals.reserve(vals_size);
+            for (unsigned k=0;k<vals_size;++k) {
+                vvals.emplace_back(subarray->Get(k)->NumberValue());
+            }
+        }
+    } else {
+        vv.reserve(1);
+        vv.emplace_back(std::vector<uint64_t>());
+        std::vector<uint64_t> & vvals = vv.back();
+        for (unsigned i=0;i<array_size;++i) {
+            vvals.emplace_back(data->Get(i)->NumberValue());
+        }
+    }
     NanReturnValue(Undefined());
 }
 
@@ -237,18 +332,28 @@ NAN_METHOD(Cache::search)
                 NanReturnValue(Undefined());
             } else {
                 auto const& array = aitr->second;
-                unsigned array_size = array.size();
-                Local<Array> arr_obj = Array::New(array_size);
-                for (unsigned j=0;j<array_size;++j) {
-                    auto arr = array[j];
-                    unsigned vals_size = arr.size();
-                    Local<Array> vals_obj = Array::New(vals_size);
-                    for (unsigned k=0;k<vals_size;++k) {
-                        vals_obj->Set(k,Number::New(arr[k]));
+                if (type == "grid") {
+                    unsigned array_size = array.size();
+                    Local<Array> arr_obj = Array::New(array_size);
+                    for (unsigned j=0;j<array_size;++j) {
+                        auto arr = array[j];
+                        unsigned vals_size = arr.size();
+                        Local<Array> vals_obj = Array::New(vals_size);
+                        for (unsigned k=0;k<vals_size;++k) {
+                            vals_obj->Set(k,Number::New(arr[k]));
+                        }
+                        arr_obj->Set(j,vals_obj);
                     }
-                    arr_obj->Set(j,vals_obj);
+                    NanReturnValue(arr_obj);
+                } else {
+                    auto arr = array[0];
+                    unsigned vals_size = arr.size();
+                    Local<Array> arr_obj = Array::New(vals_size);
+                    for (unsigned k=0;k<vals_size;++k) {
+                        arr_obj->Set(k,Number::New(arr[k]));
+                    }
+                    NanReturnValue(arr_obj);
                 }
-                NanReturnValue(arr_obj);
             }
         }
     } catch (std::exception const& ex) {

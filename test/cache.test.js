@@ -45,15 +45,14 @@ describe('cache unit', function() {
 
         assert.equal(undefined, cache.get('term', 5));
         assert.deepEqual([], cache.list('term'));
-        /*
         cache.set('term', 5, [0,1,2]);
         assert.deepEqual([0,1,2], cache.get('term', 5));
         assert.deepEqual([5], cache.list('term'));
-
         cache.set('term', 21, [5,6]);
         assert.deepEqual([5,6], cache.get('term', 21));
         assert.deepEqual([5], cache.list('term'), 'single shard');
         assert.deepEqual([5, 21], cache.list('term', 5), 'keys in shard');
+        /*
 
         // cache A serializes data, cache B loads serialized data.
         var pack = cache.pack('term', 5);
