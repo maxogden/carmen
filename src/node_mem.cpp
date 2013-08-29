@@ -49,6 +49,9 @@ public:
     static NAN_METHOD(has);
     static NAN_METHOD(load);
     static NAN_METHOD(search);
+    static NAN_METHOD(pack);
+    static NAN_METHOD(list);
+    static NAN_METHOD(set);
     static void AsyncRun(uv_work_t* req);
     static void AfterRun(uv_work_t* req);
     Cache(std::string const& id,int shardlevel);
@@ -73,6 +76,9 @@ void Cache::Initialize(Handle<Object> target) {
     NODE_SET_PROTOTYPE_METHOD(t, "has", has);
     NODE_SET_PROTOTYPE_METHOD(t, "load", load);
     NODE_SET_PROTOTYPE_METHOD(t, "search", search);
+    NODE_SET_PROTOTYPE_METHOD(t, "pack", pack);
+    NODE_SET_PROTOTYPE_METHOD(t, "list", list);
+    NODE_SET_PROTOTYPE_METHOD(t, "set", set);
     target->Set(String::NewSymbol("Cache"),t->GetFunction());
     NanAssignPersistent(FunctionTemplate, constructor, t);
 }
@@ -85,6 +91,28 @@ Cache::Cache(std::string const& id, int shardlevel)
     { }
 
 Cache::~Cache() { }
+
+NAN_METHOD(Cache::pack)
+{
+    NanScope();
+    // type, shard
+    NanReturnValue(Undefined());
+}
+
+NAN_METHOD(Cache::list)
+{
+    NanScope();
+    // type, shard
+    Local<Array> ids = Array::New();
+    NanReturnValue(ids);
+}
+
+NAN_METHOD(Cache::set)
+{
+    NanScope();
+    // type, id, data
+    NanReturnValue(Undefined());
+}
 
 NAN_METHOD(Cache::load)
 {

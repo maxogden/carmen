@@ -38,7 +38,6 @@ describe('cache unit', function() {
         assert.deepEqual([1,2,3,4,5], Cache.uniq([5,3,1,2,5,4,3,1,4,2]));
     });
 
-    /*
     it('cache sync', function() {
         var cache = new Cache('a', 1);
         assert.equal('a', cache.id);
@@ -46,7 +45,7 @@ describe('cache unit', function() {
 
         assert.equal(undefined, cache.get('term', 5));
         assert.deepEqual([], cache.list('term'));
-
+        /*
         cache.set('term', 5, [0,1,2]);
         assert.deepEqual([0,1,2], cache.get('term', 5));
         assert.deepEqual([5], cache.list('term'));
@@ -63,8 +62,8 @@ describe('cache unit', function() {
         assert.deepEqual([5,6], loader.get('term', 21));
         assert.deepEqual([5], loader.list('term'), 'single shard');
         assert.deepEqual([5, 21], loader.list('term', 5), 'keys in shard');
+        */
     });
-    */
 });
 
 describe('cache getall', function() {
@@ -175,36 +174,3 @@ describe('cache getall', function() {
         });
     });
 });
-
-
-describe('cache getall big', function() {
-    function getter(type, shard, callback) {
-        fs.readFile(__dirname + '/fixtures/big/' + type + '.' + shard + file_ext, callback);
-    };
-    var cache = new Cache('a', 2);
-    it('cache getall grid', function(done) {
-        var ids = [
-            52712469173248, // 0
-            98071753006080, // 0
-            141956873251072, // 0
-        ];
-        var name = '\ngetall time';
-        console.time(name);
-        cache.getall(getter, 'grid', ids, function(err, result) {
-            if (err) throw err;
-            //console.log(cache.get('grid',52712469173248));
-            //console.log(cache.get('grid',98071753006080));
-            //console.log(cache.get('grid',141956873251072));
-            console.timeEnd(name);
-            console.time(name+'2x');
-            cache.getall(getter, 'grid', ids, function(err, result) {
-                if (err) throw err;
-                console.timeEnd(name+'2x');
-                done();
-            });
-        });
-    });
-});
-
-
-
