@@ -7,7 +7,8 @@ if (!cxx) {
     file_ext = '.json';
     Cache = require('../cache');
 } else {
-    file_ext = '.packed';
+    //file_ext = '.packed';
+    file_ext = '.json';
     Cache = require('../lib/mem.js');
 }
 
@@ -73,7 +74,6 @@ describe('cache getall', function() {
     var stats = { term:0, grid:0 };
     var cache = new Cache('a', 2);
 
-    /*
     it('cache getall term', function(done) {
         var ids = [
             872807937, // shard1
@@ -125,7 +125,6 @@ describe('cache getall', function() {
             done();
         });
     });
-    */
 
     it('cache getall grid', function(done) {
         var ids = [
