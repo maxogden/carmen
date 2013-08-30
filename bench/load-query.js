@@ -16,7 +16,7 @@ for (var i=0;i<times;++i) {
     console.time('  total');
     var cache = new CXXCache('a', 2);
     ['grid','term'].forEach(function(type) {
-        for (var j=0;j<max_shard;++j) {
+        for (var j=0;j<=max_shard;++j) {
             cache.load(getter(type,j,'.packed'), type, j, 'capnproto');
         }
     });
@@ -40,8 +40,8 @@ for (var i=0;i<times;++i) {
     console.time('  total');
     var cache = new CXXCache('a', 2);
     ['grid','term'].forEach(function(type) {
-        for (var j=0;j<max_shard;++j) {
-            cache.load(getter(type,j,'.packed'), type, j, 'capnproto');
+        for (var j=0;j<=max_shard;++j) {
+            cache.load(getter(type,j,'.pbf'), type, j, 'protobuf');
         }
     });
     console.time('  3 gets');
@@ -93,8 +93,8 @@ for (var i=0;i<times;++i) {
     console.time('  total');
     var cache = new JSCache('a', 2);
     ['grid','term'].forEach(function(type) {
-        for (var j=0;j<max_shard;++j) {
-            cache.load(getter(type,j,'.packed'), type, j, 'capnproto');
+        for (var j=0;j<=max_shard;++j) {
+            cache.load(getter(type,j,'.json'), type, j, 'json');
         }
     });
     console.time('  3 gets');
