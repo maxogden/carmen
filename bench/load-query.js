@@ -4,25 +4,20 @@ var fs = require('fs');
 var assert = require('assert');
 
 var times = 10;
-var type = 'grid';
 var shard = 0;
 
 function getter(type, shard, file_ext) {
     return fs.readFileSync(__dirname + '/../test/fixtures/big/' + type + '.' + shard + file_ext);
 };
 
-var ids = [
-    52712469173248, // 0
-    98071753006080, // 0
-    141956873251072, // 0
-];
-
 var name = 'total time capnproto x';
 console.time(name + times);
 for (var i=0;i<times;++i) {
     console.time('  total');
     var cache = new CXXCache('a', 2);
-    cache.load(getter(type,shard,'.packed'), type, shard, 'capnproto');
+    ['grid','term'].forEach(function(type) {
+        cache.load(getter(type,shard,'.packed'), type, shard, 'capnproto');
+    });
     console.time('  3 gets');
     assert.deepEqual(cache.get('grid',52712469173248),[[104101,1100010900000591]]);
     assert.deepEqual(cache.get('grid',98071753006080),[[10996,1100005350000776,1100005350000775]]);
@@ -42,7 +37,9 @@ console.time(name + times);
 for (var i=0;i<times;++i) {
     console.time('  total');
     var cache = new CXXCache('a', 2);
-    cache.load(getter(type,shard,'.pbf'), type, shard, 'protobuf');
+    ['grid','term'].forEach(function(type) {
+        cache.load(getter(type,shard,'.pbf'), type, shard, 'protobuf');
+    });
     console.time('  3 gets');
     assert.deepEqual(cache.get('grid',52712469173248),[[104101,1100010900000591]]);
     assert.deepEqual(cache.get('grid',98071753006080),[[10996,1100005350000776,1100005350000775]]);
@@ -91,7 +88,9 @@ console.time(name + times);
 for (var i=0;i<times;++i) {
     console.time('  total');
     var cache = new JSCache('a', 2);
-    cache.load(getter(type,shard,'.json'), type, shard);
+    ['grid','term'].forEach(function(type) {
+        cache.load(getter(type,shard,'.json'), type, shard, 'json');
+    });
     console.time('  3 gets');
     assert.deepEqual(cache.get('grid',52712469173248),[[104101,1100010900000591]]);
     assert.deepEqual(cache.get('grid',98071753006080),[[10996,1100005350000776,1100005350000775]]);
