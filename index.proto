@@ -1,4 +1,6 @@
 
+package carmen.proto;
+
 option optimize_for = LITE_RUNTIME;
 
 message object {
