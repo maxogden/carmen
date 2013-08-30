@@ -175,7 +175,33 @@ NAN_METHOD(Cache::pack)
         arr_iterator aitr = itr->second.begin();
         arr_iterator aend = itr->second.end();
         unsigned idx = 0;
-        if (encoding == "protobuf") {
+        if (encoding == "capnproto") {
+            uint firstSegmentWords = 1024*1024*1024;
+            ::capnp::AllocationStrategy allocationStrategy = ::capnp::SUGGESTED_ALLOCATION_STRATEGY;
+            ::capnp::MallocMessageBuilder message(firstSegmentWords,allocationStrategy);
+            carmen::Message::Builder msg = message.initRoot<carmen::Message>();
+            ::capnp::List<carmen::Item>::Builder items = msg.initItems(itr->second.size());
+            while (aitr != aend) {
+                carmen::Item::Builder item = items[idx++];
+                item.setKey(aitr->first);
+                varray const & varr = aitr->second;
+                unsigned arr_len = varr.size();
+                auto arrays = item.initArrays(arr_len);
+                for (unsigned i=0;i<arr_len;++i) {
+                    carmen::Array::Builder arr2 = arrays[i];
+                    std::vector<uint64_t> const& vals = varr[i];
+                    unsigned val_len = vals.size();
+                    auto val = arr2.initVal(val_len);
+                    for (unsigned j=0;j<val_len;++j) {
+                        val.set(j,vals[j]);
+                    }
+                }
+                ++aitr;
+            }
+            TestPipe pipe;
+            capnp::writePackedMessage(pipe, message);
+            NanReturnValue(node::Buffer::New(pipe.getData().data(),pipe.getData().size())->handle_);
+        } else {
             carmen::proto::object msg;
             while (aitr != aend) {
                 ::carmen::proto::object_item * item = msg.add_items(); 
@@ -204,32 +230,6 @@ NAN_METHOD(Cache::pack)
                 NanReturnValue(retbuf->handle_);
             }
     #endif
-        } else {
-            uint firstSegmentWords = 1024*1024*1024;
-            ::capnp::AllocationStrategy allocationStrategy = ::capnp::SUGGESTED_ALLOCATION_STRATEGY;
-            ::capnp::MallocMessageBuilder message(firstSegmentWords,allocationStrategy);
-            carmen::Message::Builder msg = message.initRoot<carmen::Message>();
-            ::capnp::List<carmen::Item>::Builder items = msg.initItems(itr->second.size());
-            while (aitr != aend) {
-                carmen::Item::Builder item = items[idx++];
-                item.setKey(aitr->first);
-                varray const & varr = aitr->second;
-                unsigned arr_len = varr.size();
-                auto arrays = item.initArrays(arr_len);
-                for (unsigned i=0;i<arr_len;++i) {
-                    carmen::Array::Builder arr2 = arrays[i];
-                    std::vector<uint64_t> const& vals = varr[i];
-                    unsigned val_len = vals.size();
-                    auto val = arr2.initVal(val_len);
-                    for (unsigned j=0;j<val_len;++j) {
-                        val.set(j,vals[j]);
-                    }
-                }
-                ++aitr;
-            }
-            TestPipe pipe;
-            capnp::writePackedMessage(pipe, message);
-            NanReturnValue(node::Buffer::New(pipe.getData().data(),pipe.getData().size())->handle_);
         }
     }
 
@@ -311,8 +311,10 @@ NAN_METHOD(Cache::set)
         std::string key = type + "-" + shard;
         Cache* c = node::ObjectWrap::Unwrap<Cache>(args.This());
         memcache & mem = c->cache_;
-        // TODO - what if already exists?
-        c->cache_.emplace(key,arraycache());
+        mem_iterator_type itr = mem.find(key);
+        if (itr == mem.end()) {
+            c->cache_.emplace(key,arraycache());    
+        }
         arraycache & arrc = c->cache_[key];
         uint64_t key_id = args[2]->NumberValue();
         // TODO - what if already exists?
@@ -365,12 +367,15 @@ NAN_METHOD(Cache::loadJSON)
         return NanThrowTypeError("third arg 'shard' must be an Integer");
     }
     try {
-        Cache* c = node::ObjectWrap::Unwrap<Cache>(args.This());
-        memcache & mem = c->cache_;
         std::string type = *String::Utf8Value(args[1]->ToString());
         std::string shard = *String::Utf8Value(args[2]->ToString());
         std::string key = type + "-" + shard;
-        c->cache_.emplace(key,arraycache());
+        Cache* c = node::ObjectWrap::Unwrap<Cache>(args.This());
+        memcache & mem = c->cache_;
+        mem_iterator_type itr = mem.find(key);
+        if (itr == mem.end()) {
+            c->cache_.emplace(key,arraycache());    
+        }
         arraycache & arrc = c->cache_[key];
         v8::Local<v8::Array> propertyNames = obj->GetPropertyNames();
         uint32_t prop_len = propertyNames->Length();
@@ -442,23 +447,26 @@ NAN_METHOD(Cache::load)
         return NanThrowTypeError("third arg 'shard' must be an Integer");
     }
     try {
-        std::string encoding("capnp");
+        std::string encoding("capnproto");
         if (args.Length() > 3) {
             if (!args[3]->IsString()) {
                 return NanThrowTypeError("third arg must be a string");
             }
             encoding = *String::Utf8Value(args[2]->ToString());
         }
-        Cache* c = node::ObjectWrap::Unwrap<Cache>(args.This());
-        memcache & mem = c->cache_;
         const char * cdata = node::Buffer::Data(obj);
         size_t size = node::Buffer::Length(obj);
         std::string type = *String::Utf8Value(args[1]->ToString());
         std::string shard = *String::Utf8Value(args[2]->ToString());
         std::string key = type + "-" + shard;
-        c->cache_.emplace(key,arraycache());
+        Cache* c = node::ObjectWrap::Unwrap<Cache>(args.This());
+        memcache & mem = c->cache_;
+        mem_iterator_type itr = mem.find(key);
+        if (itr == mem.end()) {
+            c->cache_.emplace(key,arraycache());    
+        }
         arraycache & arrc = c->cache_[key];
-        if (encoding == "capnp") {
+        if (encoding == "capnproto") {
             BufferStream pipe(cdata,size);
             ::capnp::PackedMessageReader reader(pipe);
             auto msg = reader.getRoot<carmen::Message>();

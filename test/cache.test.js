@@ -1,15 +1,15 @@
 var Cache;
 var file_ext;
-
+var encoding;
 var cxx = true;
 
 if (!cxx) {
     file_ext = '.json';
     Cache = require('../cache');
+    encoding = 'json';
 } else {
-    //file_ext = '.packed';
-    file_ext = '.json';
     Cache = require('../lib/mem.js');
+    file_ext = '.packed';
 }
 
 var assert = require('assert');
