@@ -164,6 +164,9 @@ NAN_METHOD(Cache::pack)
             return NanThrowTypeError("third arg must be a string");
         }
         encoding = *String::Utf8Value(args[2]->ToString());
+        if (encoding != "protobuf" && encoding != "capnproto") {
+            return NanThrowTypeError((std::string("invalid encoding: ")+ encoding).c_str());
+        }
     }
     std::string type = *String::Utf8Value(args[0]->ToString());
     std::string shard = *String::Utf8Value(args[1]->ToString());
@@ -452,7 +455,10 @@ NAN_METHOD(Cache::load)
             if (!args[3]->IsString()) {
                 return NanThrowTypeError("third arg must be a string");
             }
-            encoding = *String::Utf8Value(args[2]->ToString());
+            encoding = *String::Utf8Value(args[3]->ToString());
+            if (encoding != "protobuf" && encoding != "capnproto") {
+                return NanThrowTypeError((std::string("invalid encoding: ")+ encoding).c_str());
+            }
         }
         const char * cdata = node::Buffer::Data(obj);
         size_t size = node::Buffer::Length(obj);
@@ -493,7 +499,49 @@ NAN_METHOD(Cache::load)
                 }
             }
         } else {
-
+            llmr::pbf message(cdata,size);
+            while (message.next()) {
+                if (message.tag == 1) {
+                    uint32_t bytes = message.varint();
+                    llmr::pbf item(message.data, bytes);
+                    int64_t key_id;
+                    while (item.next()) {
+                        if (item.tag == 1) {
+                            key_id = item.varint();
+                            arrc.emplace(key_id,varray());
+                        } else if (item.tag == 2) {
+                            if (key_id == 0) throw std::runtime_error("key_id not initialized!");
+                            varray & vv = arrc[key_id];
+                            uint32_t arrays_length = item.varint();
+                            llmr::pbf array(item.data,arrays_length);
+                            unsigned idx = 0;
+                            while (array.next()) {
+                                if (array.tag == 1) {
+                                    vv.emplace_back(std::vector<uint64_t>());
+                                    std::vector<uint64_t> & vvals = vv.back();
+                                    uint32_t vals_length = array.varint();
+                                    llmr::pbf val(array.data,vals_length);
+                                    unsigned vidx = 0;
+                                    while (val.next()) {
+                                        vvals.emplace_back(val.value);
+                                    }
+                                    array.skipBytes(vals_length);
+                                } else {
+                                    throw std::runtime_error("skipping when shouldnt");
+                                    array.skip();
+                                }
+                            }
+                            item.skipBytes(arrays_length);
+                        } else {
+                            throw std::runtime_error("hit unknown type");
+                        }
+                    }
+                    message.skipBytes(bytes);
+                } else {
+                    throw std::runtime_error("skipping when shouldnt");
+                    message.skip();
+                }
+            }
         }
     /*
         if (!args[args.Length()-1]->IsFunction())

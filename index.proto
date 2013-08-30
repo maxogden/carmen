@@ -10,8 +10,8 @@ message object {
     }
     
     message item {
-        repeated array arrays = 1;
-        required int64 key = 2;
+        required int64 key = 1;
+        repeated array arrays = 2;
     }
 
     repeated item items = 1;

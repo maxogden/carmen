@@ -9,7 +9,10 @@ if (!cxx) {
     encoding = 'json';
 } else {
     Cache = require('../lib/mem.js');
-    file_ext = '.packed';
+    //file_ext = '.packed';
+    //encoding = 'capnproto'
+    file_ext = '.pbf';
+    encoding = 'protobuf'
 }
 
 var assert = require('assert');
@@ -54,17 +57,26 @@ describe('cache unit', function() {
         assert.deepEqual([5], cache.list('term'), 'single shard');
         assert.deepEqual([5, 21], cache.list('term', 5), 'keys in shard');
         // cache A serializes data, cache B loads serialized data.
-        var pack = cache.pack('term', 5);
+        var pack = cache.pack('term', 5, 'protobuf');
         var loader = new Cache('b', 1);
-        loader.load(pack, 'term', 5);
+        loader.load(pack, 'term', 5, 'protobuf');
         assert.deepEqual([5,6], loader.get('term', 21));
         assert.deepEqual([5], loader.list('term'), 'single shard');
         assert.deepEqual([5, 21], loader.list('term', 5), 'keys in shard');
+
+        var pack2 = cache.pack('term', 5, 'capnproto');
+        var loader2 = new Cache('b', 1);
+        loader2.load(pack2, 'term', 5, 'capnproto');
+        assert.deepEqual([5,6], loader2.get('term', 21));
+        assert.deepEqual([5], loader2.list('term'), 'single shard');
+        assert.deepEqual([5, 21], loader2.list('term', 5), 'keys in shard');
+
     });
 });
 
 describe('cache getall', function() {
     function getter(type, shard, callback) {
+        this.encoding = encoding;
         stats[type]++;
         fs.readFile(__dirname + '/fixtures/' + type + '.' + shard + file_ext, callback);
     };
