@@ -53,8 +53,6 @@ describe('cache unit', function() {
         assert.deepEqual([5,6], cache.get('term', 21));
         assert.deepEqual([5], cache.list('term'), 'single shard');
         assert.deepEqual([5, 21], cache.list('term', 5), 'keys in shard');
-        /*
-
         // cache A serializes data, cache B loads serialized data.
         var pack = cache.pack('term', 5);
         var loader = new Cache('b', 1);
@@ -62,7 +60,6 @@ describe('cache unit', function() {
         assert.deepEqual([5,6], loader.get('term', 21));
         assert.deepEqual([5], loader.list('term'), 'single shard');
         assert.deepEqual([5, 21], loader.list('term', 5), 'keys in shard');
-        */
     });
 });
 

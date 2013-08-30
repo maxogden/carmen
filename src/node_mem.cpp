@@ -15,6 +15,7 @@
 #include "pbf.hpp"
 #include "nan.h"
 #include "index.capnp.h"
+#include "index.pb.h"
 #include <capnp/message.h>
 #include <capnp/serialize-packed.h>
 #include "capnproto_helper.hpp"
@@ -94,6 +95,57 @@ Cache::Cache(std::string const& id, int shardlevel)
 
 Cache::~Cache() { }
 
+class TestPipe: public kj::BufferedInputStream, public kj::OutputStream {
+public:
+  TestPipe()
+      : preferredReadSize(std::numeric_limits<size_t>::max()), readPos(0) {}
+  explicit TestPipe(size_t preferredReadSize)
+      : preferredReadSize(preferredReadSize), readPos(0) {}
+  ~TestPipe() {}
+
+  const std::string& getData() { return data; }
+  void resetRead(size_t preferredReadSize = std::numeric_limits<size_t>::max()) {
+    readPos = 0;
+    this->preferredReadSize = preferredReadSize;
+  }
+
+  bool allRead() {
+    return readPos == data.size();
+  }
+
+  void clear(size_t preferredReadSize = std::numeric_limits<size_t>::max()) {
+    resetRead(preferredReadSize);
+    data.clear();
+  }
+
+  void write(const void* buffer, size_t size) override {
+    data.append(reinterpret_cast<const char*>(buffer), size);
+  }
+
+  size_t tryRead(void* buffer, size_t minBytes, size_t maxBytes) override {
+    //KJ_ASSERT(maxBytes <= data.size() - readPos, "Overran end of stream.");
+    size_t amount = std::min(maxBytes, std::max(minBytes, preferredReadSize));
+    memcpy(buffer, data.data() + readPos, amount);
+    readPos += amount;
+    return amount;
+  }
+
+  void skip(size_t bytes) override {
+    //KJ_ASSERT(bytes <= data.size() - readPos, "Overran end of stream.");
+    readPos += bytes;
+  }
+
+  kj::ArrayPtr<const capnp::byte> tryGetReadBuffer() override {
+    size_t amount = std::min(data.size() - readPos, preferredReadSize);
+    return kj::arrayPtr(reinterpret_cast<const capnp::byte*>(data.data() + readPos), amount);
+  }
+
+private:
+  size_t preferredReadSize;
+  std::string data;
+  std::string::size_type readPos;
+};
+
 NAN_METHOD(Cache::pack)
 {
     NanScope();
@@ -106,13 +158,81 @@ NAN_METHOD(Cache::pack)
     if (!args[1]->IsNumber()) {
         return NanThrowTypeError("second arg must be an integer");
     }
-    std::string encoding("protobuf");
+    std::string encoding("capnproto");
     if (args.Length() > 2) {
         if (!args[2]->IsString()) {
             return NanThrowTypeError("third arg must be a string");
         }
         encoding = *String::Utf8Value(args[2]->ToString());
     }
+    std::string type = *String::Utf8Value(args[0]->ToString());
+    std::string shard = *String::Utf8Value(args[1]->ToString());
+    std::string key = type + "-" + shard;
+    Cache* c = node::ObjectWrap::Unwrap<Cache>(args.This());
+    memcache const& mem = c->cache_;
+    mem_iterator_type itr = mem.find(key);
+    if (itr != mem.end()) {
+        arr_iterator aitr = itr->second.begin();
+        arr_iterator aend = itr->second.end();
+        unsigned idx = 0;
+        if (encoding == "protobuf") {
+            carmen::proto::object msg;
+            while (aitr != aend) {
+                ::carmen::proto::object_item * item = msg.add_items(); 
+                item->set_key(aitr->first);
+                varray const & varr = aitr->second;
+                for (unsigned i=0;i<varr.size();++i) {
+                    ::carmen::proto::object_array * array = item->add_arrays();
+                    std::vector<uint64_t> const& vals = varr[i];
+                    for (unsigned j=0;j<vals.size();++j) {
+                        array->add_val(vals[j]);
+                    }
+                }
+                ++aitr;
+            }
+            int size = msg.ByteSize();
+    #if NODE_VERSION_AT_LEAST(0, 11, 0)
+            Local<Object> retbuf = node::Buffer::New(size);
+            if (msg.SerializeToArray(node::Buffer::Data(retbuf),size))
+            {
+                NanReturnValue(retbuf);
+            }
+    #else
+            node::Buffer *retbuf = node::Buffer::New(size);
+            if (msg.SerializeToArray(node::Buffer::Data(retbuf),size))
+            {
+                NanReturnValue(retbuf->handle_);
+            }
+    #endif
+        } else {
+            uint firstSegmentWords = 1024*1024*1024;
+            ::capnp::AllocationStrategy allocationStrategy = ::capnp::SUGGESTED_ALLOCATION_STRATEGY;
+            ::capnp::MallocMessageBuilder message(firstSegmentWords,allocationStrategy);
+            carmen::Message::Builder msg = message.initRoot<carmen::Message>();
+            ::capnp::List<carmen::Item>::Builder items = msg.initItems(itr->second.size());
+            while (aitr != aend) {
+                carmen::Item::Builder item = items[idx++];
+                item.setKey(aitr->first);
+                varray const & varr = aitr->second;
+                unsigned arr_len = varr.size();
+                auto arrays = item.initArrays(arr_len);
+                for (unsigned i=0;i<arr_len;++i) {
+                    carmen::Array::Builder arr2 = arrays[i];
+                    std::vector<uint64_t> const& vals = varr[i];
+                    unsigned val_len = vals.size();
+                    auto val = arr2.initVal(val_len);
+                    for (unsigned j=0;j<val_len;++j) {
+                        val.set(j,vals[j]);
+                    }
+                }
+                ++aitr;
+            }
+            TestPipe pipe;
+            capnp::writePackedMessage(pipe, message);
+            NanReturnValue(node::Buffer::New(pipe.getData().data(),pipe.getData().size())->handle_);
+        }
+    }
+
     NanReturnValue(Undefined());
 }
 

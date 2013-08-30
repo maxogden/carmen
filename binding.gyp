@@ -30,7 +30,9 @@
     {
       'target_name': 'mem',
       'sources': [
-        "src/node_mem.cpp"
+        "src/node_mem.cpp",
+        "src/index.pb.cc",
+        "src/index.capnp.cpp"
       ],
       'xcode_settings': {
         'OTHER_CPLUSPLUSFLAGS':['-stdlib=libc++'],
@@ -39,7 +41,7 @@
         'CLANG_CXX_LANGUAGE_STANDARD':'c++11',
         'MACOSX_DEPLOYMENT_TARGET':'10.7'
       },
-      'libraries':[ '-lkj','-lcapnp'],
+      'libraries':[ '-lkj','-lcapnp','-lprotobuf-lite'],
     },
     {
       'target_name': 'action_after_build',
