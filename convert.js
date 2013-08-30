@@ -10,7 +10,7 @@ function getter(type, shard, file_ext) {
     return fs.readFileSync(__dirname + '/test/fixtures/' + type + '.' + shard + file_ext);
 };
 
-for (var i=0;i<2;++i) {
+for (var i=0;i<=2;++i) {
 	var shard = i;
 	['grid','term'].forEach(function(type){
 	    var jscache = new JSCache('a', shard);
@@ -20,7 +20,9 @@ for (var i=0;i<2;++i) {
         var cxxsorted = cxxcache.list(type,shard).sort();
         var jssorted = jscache.list(type,shard).sort();
         assert.deepEqual(jssorted,cxxsorted);
-        console.log(cxxcache.pack(type,shard))
+        var filename = __dirname + '/test/fixtures/' + type + '.' + shard;
+        fs.writeFileSync(filename + '.pbf',cxxcache.pack(type,shard,'protobuf'));
+        fs.writeFileSync(filename + '.packed',cxxcache.pack(type,shard,'capnproto'));
 	});
 }
 
