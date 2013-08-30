@@ -4,7 +4,7 @@ var fs = require('fs');
 var assert = require('assert');
 
 var times = 10;
-var shard = 0;
+var max_shard = 0;
 
 function getter(type, shard, file_ext) {
     return fs.readFileSync(__dirname + '/../test/fixtures/big/' + type + '.' + shard + file_ext);
@@ -16,7 +16,9 @@ for (var i=0;i<times;++i) {
     console.time('  total');
     var cache = new CXXCache('a', 2);
     ['grid','term'].forEach(function(type) {
-        cache.load(getter(type,shard,'.packed'), type, shard, 'capnproto');
+        for (var j=0;j<max_shard;++j) {
+            cache.load(getter(type,j,'.packed'), type, j, 'capnproto');
+        }
     });
     console.time('  3 gets');
     assert.deepEqual(cache.get('grid',52712469173248),[[104101,1100010900000591]]);
@@ -38,7 +40,9 @@ for (var i=0;i<times;++i) {
     console.time('  total');
     var cache = new CXXCache('a', 2);
     ['grid','term'].forEach(function(type) {
-        cache.load(getter(type,shard,'.pbf'), type, shard, 'protobuf');
+        for (var j=0;j<max_shard;++j) {
+            cache.load(getter(type,j,'.packed'), type, j, 'capnproto');
+        }
     });
     console.time('  3 gets');
     assert.deepEqual(cache.get('grid',52712469173248),[[104101,1100010900000591]]);
@@ -89,7 +93,9 @@ for (var i=0;i<times;++i) {
     console.time('  total');
     var cache = new JSCache('a', 2);
     ['grid','term'].forEach(function(type) {
-        cache.load(getter(type,shard,'.json'), type, shard, 'json');
+        for (var j=0;j<max_shard;++j) {
+            cache.load(getter(type,j,'.packed'), type, j, 'capnproto');
+        }
     });
     console.time('  3 gets');
     assert.deepEqual(cache.get('grid',52712469173248),[[104101,1100010900000591]]);
