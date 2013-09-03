@@ -45,8 +45,6 @@ public:
     static Persistent<FunctionTemplate> constructor;
     static void Initialize(Handle<Object> target);
     static NAN_METHOD(New);
-    static NAN_METHOD(parseProto);
-    static NAN_METHOD(parseCapnProto);
     static NAN_METHOD(has);
     static NAN_METHOD(load);
     static NAN_METHOD(loadJSON);
@@ -73,8 +71,6 @@ void Cache::Initialize(Handle<Object> target) {
     Local<FunctionTemplate> t = FunctionTemplate::New(Cache::New);
     t->InstanceTemplate()->SetInternalFieldCount(1);
     t->SetClassName(String::NewSymbol("Cache"));
-    NODE_SET_PROTOTYPE_METHOD(t, "parseProto", parseProto);
-    NODE_SET_PROTOTYPE_METHOD(t, "parseCapnProto", parseCapnProto);
     NODE_SET_PROTOTYPE_METHOD(t, "has", has);
     NODE_SET_PROTOTYPE_METHOD(t, "load", load);
     NODE_SET_PROTOTYPE_METHOD(t, "loadJSON", loadJSON);
@@ -94,57 +90,6 @@ Cache::Cache(std::string const& id, int shardlevel)
     { }
 
 Cache::~Cache() { }
-
-class TestPipe: public kj::BufferedInputStream, public kj::OutputStream {
-public:
-  TestPipe()
-      : preferredReadSize(std::numeric_limits<size_t>::max()), readPos(0) {}
-  explicit TestPipe(size_t preferredReadSize)
-      : preferredReadSize(preferredReadSize), readPos(0) {}
-  ~TestPipe() {}
-
-  const std::string& getData() { return data; }
-  void resetRead(size_t preferredReadSize = std::numeric_limits<size_t>::max()) {
-    readPos = 0;
-    this->preferredReadSize = preferredReadSize;
-  }
-
-  bool allRead() {
-    return readPos == data.size();
-  }
-
-  void clear(size_t preferredReadSize = std::numeric_limits<size_t>::max()) {
-    resetRead(preferredReadSize);
-    data.clear();
-  }
-
-  void write(const void* buffer, size_t size) override {
-    data.append(reinterpret_cast<const char*>(buffer), size);
-  }
-
-  size_t tryRead(void* buffer, size_t minBytes, size_t maxBytes) override {
-    //KJ_ASSERT(maxBytes <= data.size() - readPos, "Overran end of stream.");
-    size_t amount = std::min(maxBytes, std::max(minBytes, preferredReadSize));
-    memcpy(buffer, data.data() + readPos, amount);
-    readPos += amount;
-    return amount;
-  }
-
-  void skip(size_t bytes) override {
-    //KJ_ASSERT(bytes <= data.size() - readPos, "Overran end of stream.");
-    readPos += bytes;
-  }
-
-  kj::ArrayPtr<const capnp::byte> tryGetReadBuffer() override {
-    size_t amount = std::min(data.size() - readPos, preferredReadSize);
-    return kj::arrayPtr(reinterpret_cast<const capnp::byte*>(data.data() + readPos), amount);
-  }
-
-private:
-  size_t preferredReadSize;
-  std::string data;
-  std::string::size_type readPos;
-};
 
 NAN_METHOD(Cache::pack)
 {
@@ -541,13 +486,6 @@ NAN_METHOD(Cache::load)
                 }
             }
         }
-    /*
-        if (!args[args.Length()-1]->IsFunction())
-            return NanThrowTypeError("last argument must be a callback function");
-        auto cb = Handle<Function>::Cast(args[args.Length()-1]);
-        Local<Value> argv[1] = { Local<Value>::New(Null()) };
-        cb->Call(Context::GetCurrent()->Global(), 1, argv);
-    */
     } catch (std::exception const& ex) {
         return NanThrowTypeError(ex.what());
     }
@@ -671,201 +609,6 @@ NAN_METHOD(Cache::New)
         return NanThrowTypeError(ex.what());
     }
     NanReturnValue(Undefined());
-}
-
-
-NAN_METHOD(Cache::parseCapnProto)
-{
-    NanScope();
-    if (args.Length() < 1) {
-        return NanThrowTypeError("first argument must be a buffer");
-    }
-    if (!args[0]->IsObject()) {
-        return NanThrowTypeError("first argument must be a buffer");
-    }
-    Local<Object> obj = args[0]->ToObject();
-    if (obj->IsNull() || obj->IsUndefined()) {
-        return NanThrowTypeError("a buffer expected for first argument");
-    }
-    if (!node::Buffer::HasInstance(obj)) {
-        return NanThrowTypeError("first argument must be a buffer");
-    }
-    bool packed = false;
-    if (args.Length() == 2) {
-        if (!args[1]->IsObject()) {
-            return NanThrowTypeError("optional second argument must be an object");
-        }
-        Local<Object> options = args[1]->ToObject();
-        if (options->IsNull() || options->IsUndefined()) {
-            return NanThrowTypeError("a valid object expected for second argument");
-        }
-        if (options->Has(String::New("packed"))) {
-            Local<Value> packed_opt = options->Get(String::New("packed"));
-            if (!packed_opt->IsBoolean())
-                return NanThrowTypeError("optional arg 'packed' must be a boolean");
-            packed = packed_opt->BooleanValue();
-        }
-    }
-    Local<Object> json = Object::New();
-    try {
-        const char * cdata = node::Buffer::Data(obj);
-        size_t size = node::Buffer::Length(obj);
-
-        ::capnp::ReaderOptions options;
-        ScratchSpace scratch;
-        //options.traversalLimitInWords = 8 * 1024 * 1024
-
-        /*
-        // slow since this allocates more memory
-        ::kj::ArrayPtr<const ::kj::byte> arr_ptr(&cdata[0],size);
-        ::kj::ArrayInputStream in(arr_ptr);
-        ::capnp::PackedMessageReader reader(in,options,nullptr);
-        */
-
-        /*
-        //todo - read from raw array unpacked
-        ::kj::ArrayPtr<const ::capnp::word> arr_ptr(&cdata[0],size);
-        FlatArrayMessageReader reader(arr_ptr);
-        */
-
-        // TODO - try readMessageUnchecked on single segment message
-        //carmen::Message::Reader msg = ::capnp::readMessageUnchecked<carmen::Message>((const capnp::word *)&cdata[0]);
-        
-        // packed
-        carmen::Message::Reader msg;
-        if (packed) {
-                BufferStream pipe(cdata,size);
-                ::capnp::PackedMessageReader reader(pipe);
-                // no faster...
-                //::capnp::PackedMessageReader reader(pipe,options,kj::arrayPtr(scratchSpace, SCRATCH_SIZE));
-                msg = reader.getRoot<carmen::Message>();
-        } else {
-                UnBufferedStream pipe(cdata,size,true);
-                ::capnp::InputStreamMessageReader reader(pipe,options,kj::arrayPtr(scratchSpace, SCRATCH_SIZE));
-                msg = reader.getRoot<carmen::Message>();
-        }
-
-
-        auto items = msg.getItems();
-        unsigned items_size = items.size();
-        for (unsigned i=0;i<items_size;++i) {
-            auto item = items[i];
-            auto array = item.getArrays();
-            unsigned array_size = array.size();
-            #ifdef CREATE_JS_OBJ
-            Local<Array> arr_obj = Array::New(array_size);
-            #endif
-            for (unsigned j=0;j<array_size;++j) {
-                auto arr = array[j];
-                auto vals = arr.getVal();
-                unsigned vals_size = vals.size();
-                #ifdef CREATE_JS_OBJ
-                Local<Array> vals_obj = Array::New(vals_size);
-                #endif
-                for (unsigned k=0;k<vals_size;++k) {
-                    #ifdef CREATE_JS_OBJ
-                    vals_obj->Set(k,Number::New(vals[k]));
-                    #endif
-                }
-                #ifdef CREATE_JS_OBJ
-                arr_obj->Set(j,vals_obj);
-                #endif
-            }
-            #ifdef CREATE_JS_OBJ
-            uint64_t num = item.getKey();
-            if (num < max_32_int) {
-                json->Set(num,arr_obj);
-            } else {
-                json->Set(Number::New(item.getKey()),arr_obj);
-            }
-            #endif
-        }
-    } catch (std::exception const& ex) {
-        return NanThrowTypeError(ex.what());
-    }
-    NanReturnValue(json);
-}
-
-NAN_METHOD(Cache::parseProto)
-{
-    NanScope();
-    if (args.Length() < 1) {
-        return NanThrowTypeError("first argument must be a buffer");
-    }
-
-    if (!args[0]->IsObject()) {
-        return NanThrowTypeError("first argument must be a buffer");
-    }
-
-    Local<Object> obj = args[0]->ToObject();
-    if (obj->IsNull() || obj->IsUndefined()) {
-        return NanThrowTypeError("a buffer expected for first argument");
-    }
-    if (!node::Buffer::HasInstance(obj)) {
-        return NanThrowTypeError("first argument must be a buffer");
-    }
-    Local<Object> json = Object::New();
-    try {
-        const char * cdata = node::Buffer::Data(obj);
-        size_t size = node::Buffer::Length(obj);
-        // @TODO - prevent crash on invalid data
-        llmr::pbf message(cdata,size);
-        while (message.next()) {
-            if (message.tag == 1) {
-                uint32_t bytes = message.varint();
-                llmr::pbf item(message.data, bytes);
-                #ifdef CREATE_JS_OBJ
-                Local<Array> val_array = Array::New();
-                #endif
-                while (item.next()) {
-                    if (item.tag == 1) {
-                        uint32_t arrays_length = item.varint();
-                        llmr::pbf array(item.data,arrays_length);
-                        #ifdef CREATE_JS_OBJ
-                        unsigned idx = 0;
-                        #endif
-                        while (array.next()) {
-                            if (array.tag == 1) {
-                                uint32_t vals_length = array.varint();
-                                llmr::pbf val(array.data,vals_length);
-                                #ifdef CREATE_JS_OBJ
-                                unsigned vidx = 0;
-                                Local<Array> v2 = Array::New();
-                                #endif
-                                while (val.next()) {
-                                    #ifdef CREATE_JS_OBJ
-                                    v2->Set(vidx++,Number::New(val.value));
-                                    #endif
-                                }
-                                #ifdef CREATE_JS_OBJ
-                                val_array->Set(idx++,v2);
-                                #endif
-                                array.skipBytes(vals_length);
-                            } else {
-                                throw std::runtime_error("skipping when shouldnt");
-                                array.skip();
-                            }
-                        }
-                        item.skipBytes(arrays_length);
-                    } else if (item.tag == 2) {
-                        #ifdef CREATE_JS_OBJ
-                        int64_t val = item.varint();
-                        json->Set(Number::New(val),val_array);
-                        #endif
-                    } else {
-                        throw std::runtime_error("hit unknown type");
-                    }
-                }
-                message.skipBytes(bytes);
-            } else {
-                throw std::runtime_error("skipping when shouldnt");
-                message.skip();
-            }    
-        }
-    } catch (std::exception const& ex) {
-        return NanThrowTypeError(ex.what());
-    }
-    NanReturnValue(json);
 }
 
 extern "C" {
