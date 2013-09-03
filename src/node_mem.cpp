@@ -36,7 +36,7 @@ using namespace v8;
 
 typedef std::vector<std::vector<uint64_t>> varray;
 typedef std::map<uint64_t,varray> arraycache;
-typedef arraycache::const_iterator arr_iterator;
+typedef arraycache::const_iterator arraycache_iterator;
 typedef std::map<std::string,arraycache> memcache;
 typedef memcache::const_iterator mem_iterator_type;
 
@@ -54,7 +54,7 @@ public:
     static NAN_METHOD(set);
     static void AsyncRun(uv_work_t* req);
     static void AfterRun(uv_work_t* req);
-    Cache(std::string const& id,int shardlevel);
+    Cache(std::string const& id, int shardlevel);
     void _ref() { Ref(); }
     void _unref() { Unref(); }
 private:
@@ -120,8 +120,8 @@ NAN_METHOD(Cache::pack)
     memcache const& mem = c->cache_;
     mem_iterator_type itr = mem.find(key);
     if (itr != mem.end()) {
-        arr_iterator aitr = itr->second.begin();
-        arr_iterator aend = itr->second.end();
+        arraycache_iterator aitr = itr->second.begin();
+        arraycache_iterator aend = itr->second.end();
         unsigned idx = 0;
         if (encoding == "capnproto") {
             uint firstSegmentWords = 1024*1024*1024;
@@ -215,8 +215,8 @@ NAN_METHOD(Cache::list)
             std::string key = type + "-" + shard;
             mem_iterator_type itr = mem.find(key);
             if (itr != mem.end()) {
-                arr_iterator aitr = itr->second.begin();
-                arr_iterator aend = itr->second.end();
+                arraycache_iterator aitr = itr->second.begin();
+                arraycache_iterator aend = itr->second.end();
                 unsigned idx = 0;
                 while (aitr != aend) {
                     ids->Set(idx++,Number::New(aitr->first)->ToString());
@@ -265,7 +265,7 @@ NAN_METHOD(Cache::set)
         }
         arraycache & arrc = c->cache_[key];
         uint64_t key_id = args[2]->NumberValue();
-        arr_iterator itr2 = arrc.find(key_id);
+        arraycache_iterator itr2 = arrc.find(key_id);
         if (itr2 == arrc.end()) {
             arrc.emplace(key_id,varray());   
         }
@@ -553,7 +553,7 @@ NAN_METHOD(Cache::search)
         if (itr == mem.end()) {
             NanReturnValue(Undefined());
         } else {
-            arr_iterator aitr = itr->second.find(id);
+            arraycache_iterator aitr = itr->second.find(id);
             if (aitr == itr->second.end()) {
                 NanReturnValue(Undefined());
             } else {
