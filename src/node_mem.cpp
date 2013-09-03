@@ -382,7 +382,7 @@ NAN_METHOD(Cache::loadJSON)
         arraycache & arrc = c->cache_[key];
         v8::Local<v8::Array> propertyNames = obj->GetPropertyNames();
         uint32_t prop_len = propertyNames->Length();
-        for (int i=0;i < prop_len;++i) {
+        for (uint32_t i=0;i < prop_len;++i) {
             v8::Local<v8::Value> key = propertyNames->Get(i);
             v8::Local<v8::Value> prop = obj->Get(key);
             if (prop->IsArray()) {
@@ -393,7 +393,7 @@ NAN_METHOD(Cache::loadJSON)
                 if (type == "grid") {
                     uint32_t arr_len = arr->Length();
                     vv.reserve(arr_len);
-                    for (int j=0;j < arr_len;++j) {
+                    for (uint32_t j=0;j < arr_len;++j) {
                         v8::Local<v8::Value> val_array = arr->Get(j);
                         if (val_array->IsArray()) {
                             vv.emplace_back(std::vector<uint64_t>());
@@ -401,7 +401,7 @@ NAN_METHOD(Cache::loadJSON)
                             v8::Local<v8::Array> vals = v8::Local<v8::Array>::Cast(val_array);
                             uint32_t val_len = vals->Length();
                             vvals.reserve(val_len);
-                            for (int k=0;k < val_len;++k) {
+                            for (uint32_t k=0;k < val_len;++k) {
                                 vvals.emplace_back(vals->Get(k)->NumberValue());
                             }
                         }
@@ -412,7 +412,7 @@ NAN_METHOD(Cache::loadJSON)
                     vv.emplace_back(std::vector<uint64_t>());
                     std::vector<uint64_t> & vvals = vv.back();
                     vvals.reserve(arr_len);
-                    for (int j=0;j < arr_len;++j) {
+                    for (uint32_t j=0;j < arr_len;++j) {
                         v8::Local<v8::Value> val = arr->Get(j);
                         if (val->IsNumber()) {
                             vvals.emplace_back(val->NumberValue());
@@ -514,14 +514,12 @@ NAN_METHOD(Cache::load)
                             varray & vv = arrc[key_id];
                             uint32_t arrays_length = item.varint();
                             llmr::pbf array(item.data,arrays_length);
-                            unsigned idx = 0;
                             while (array.next()) {
                                 if (array.tag == 1) {
                                     vv.emplace_back(std::vector<uint64_t>());
                                     std::vector<uint64_t> & vvals = vv.back();
                                     uint32_t vals_length = array.varint();
                                     llmr::pbf val(array.data,vals_length);
-                                    unsigned vidx = 0;
                                     while (val.next()) {
                                         vvals.emplace_back(val.value);
                                     }
@@ -823,13 +821,15 @@ NAN_METHOD(Cache::parseProto)
                     if (item.tag == 1) {
                         uint32_t arrays_length = item.varint();
                         llmr::pbf array(item.data,arrays_length);
+                        #ifdef CREATE_JS_OBJ
                         unsigned idx = 0;
+                        #endif
                         while (array.next()) {
                             if (array.tag == 1) {
                                 uint32_t vals_length = array.varint();
                                 llmr::pbf val(array.data,vals_length);
-                                unsigned vidx = 0;
                                 #ifdef CREATE_JS_OBJ
+                                unsigned vidx = 0;
                                 Local<Array> v2 = Array::New();
                                 #endif
                                 while (val.next()) {
@@ -848,8 +848,8 @@ NAN_METHOD(Cache::parseProto)
                         }
                         item.skipBytes(arrays_length);
                     } else if (item.tag == 2) {
-                        int64_t val = item.varint();
                         #ifdef CREATE_JS_OBJ
+                        int64_t val = item.varint();
                         json->Set(Number::New(val),val_array);
                         #endif
                     } else {
