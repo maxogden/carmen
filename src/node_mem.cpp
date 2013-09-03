@@ -265,9 +265,14 @@ NAN_METHOD(Cache::set)
         }
         arraycache & arrc = c->cache_[key];
         uint64_t key_id = args[2]->NumberValue();
-        // TODO - what if already exists?
-        arrc.emplace(key_id,varray());
+        arr_iterator itr2 = arrc.find(key_id);
+        if (itr2 == arrc.end()) {
+            arrc.emplace(key_id,varray());   
+        }
         varray & vv = arrc[key_id];
+        if (itr2 != arrc.end()) {
+            vv.clear();
+        }
         unsigned array_size = data->Length();
         if (type == "grid") {
             vv.reserve(array_size);
