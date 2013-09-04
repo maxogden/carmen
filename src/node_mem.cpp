@@ -157,7 +157,6 @@ NAN_METHOD(Cache::pack)
                     item->set_key(aitr->first);
                     varray const & varr = aitr->second;
                     unsigned varr_size = varr.size();
-                    item->set_size(varr_size);
                     for (unsigned i=0;i<varr_size;++i) {
                         ::carmen::proto::object_array * array = item->add_arrays();
                         std::vector<uint64_t> const& vals = varr[i];
