@@ -4,8 +4,8 @@ var encoding;
 var cxx = true;
 
 if (!cxx) {
-    file_ext = '.json';
     Cache = require('../cache');
+    file_ext = '.json';
     encoding = 'json';
 } else {
     Cache = require('../lib/mem.js');
@@ -79,6 +79,25 @@ describe('cache unit', function() {
         assert.deepEqual([0,1,2], cache.get('term', 5));
         cache.set('term', 5, [0,1,2,3]);
         assert.deepEqual([0,1,2,3], cache.get('term', 5));
+    });
+
+    it('cache load/pack/load round trip', function() {
+        ['grid','term'].forEach(function(type) {
+            for (var shard=0;shard<=2;++shard) {
+                var cache = new Cache('a', 1);
+                assert.deepEqual([], cache.list(type));
+                var filename = __dirname + '/fixtures/' + type + '.' + shard + file_ext;
+                cache.load(fs.readFileSync(filename), type, shard, encoding);
+                assert.deepEqual([shard], cache.list(type));
+                var ids = cache.list(type,shard);
+                assert.ok(ids.length > 0);
+                var packed = cache.pack(type,shard,encoding);
+                assert.ok(packed);
+                var cache2 = new Cache('a', 1);
+                cache2.load(packed,type,shard,encoding);
+                assert.deepEqual(ids,cache2.list(type,shard));
+            }
+        });
     });
 
 });
