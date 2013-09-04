@@ -113,72 +113,78 @@ NAN_METHOD(Cache::pack)
             return NanThrowTypeError((std::string("invalid encoding: ")+ encoding).c_str());
         }
     }
-    std::string type = *String::Utf8Value(args[0]->ToString());
-    std::string shard = *String::Utf8Value(args[1]->ToString());
-    std::string key = type + "-" + shard;
-    Cache* c = node::ObjectWrap::Unwrap<Cache>(args.This());
-    memcache const& mem = c->cache_;
-    mem_iterator_type itr = mem.find(key);
-    if (itr != mem.end()) {
-        arraycache_iterator aitr = itr->second.begin();
-        arraycache_iterator aend = itr->second.end();
-        unsigned idx = 0;
-        if (encoding == "capnproto") {
-            uint firstSegmentWords = 1024*1024*1024;
-            ::capnp::AllocationStrategy allocationStrategy = ::capnp::SUGGESTED_ALLOCATION_STRATEGY;
-            ::capnp::MallocMessageBuilder message(firstSegmentWords,allocationStrategy);
-            carmen::Message::Builder msg = message.initRoot<carmen::Message>();
-            ::capnp::List<carmen::Item>::Builder items = msg.initItems(itr->second.size());
-            while (aitr != aend) {
-                carmen::Item::Builder item = items[idx++];
-                item.setKey(aitr->first);
-                varray const & varr = aitr->second;
-                unsigned arr_len = varr.size();
-                auto arrays = item.initArrays(arr_len);
-                for (unsigned i=0;i<arr_len;++i) {
-                    carmen::Array::Builder arr2 = arrays[i];
-                    std::vector<uint64_t> const& vals = varr[i];
-                    unsigned val_len = vals.size();
-                    auto val = arr2.initVal(val_len);
-                    for (unsigned j=0;j<val_len;++j) {
-                        val.set(j,vals[j]);
+        try {
+        std::string type = *String::Utf8Value(args[0]->ToString());
+        std::string shard = *String::Utf8Value(args[1]->ToString());
+        std::string key = type + "-" + shard;
+        Cache* c = node::ObjectWrap::Unwrap<Cache>(args.This());
+        memcache const& mem = c->cache_;
+        mem_iterator_type itr = mem.find(key);
+        if (itr != mem.end()) {
+            arraycache_iterator aitr = itr->second.begin();
+            arraycache_iterator aend = itr->second.end();
+            unsigned idx = 0;
+            if (encoding == "capnproto") {
+                uint firstSegmentWords = 1024*1024*1024;
+                ::capnp::AllocationStrategy allocationStrategy = ::capnp::SUGGESTED_ALLOCATION_STRATEGY;
+                ::capnp::MallocMessageBuilder message(firstSegmentWords,allocationStrategy);
+                carmen::Message::Builder msg = message.initRoot<carmen::Message>();
+                ::capnp::List<carmen::Item>::Builder items = msg.initItems(itr->second.size());
+                while (aitr != aend) {
+                    carmen::Item::Builder item = items[idx++];
+                    item.setKey(aitr->first);
+                    varray const & varr = aitr->second;
+                    unsigned arr_len = varr.size();
+                    auto arrays = item.initArrays(arr_len);
+                    for (unsigned i=0;i<arr_len;++i) {
+                        carmen::Array::Builder arr2 = arrays[i];
+                        std::vector<uint64_t> const& vals = varr[i];
+                        unsigned val_len = vals.size();
+                        auto val = arr2.initVal(val_len);
+                        for (unsigned j=0;j<val_len;++j) {
+                            val.set(j,vals[j]);
+                        }
                     }
+                    ++aitr;
                 }
-                ++aitr;
-            }
-            TestPipe pipe;
-            capnp::writePackedMessage(pipe, message);
-            NanReturnValue(node::Buffer::New(pipe.getData().data(),pipe.getData().size())->handle_);
-        } else {
-            carmen::proto::object msg;
-            while (aitr != aend) {
-                ::carmen::proto::object_item * item = msg.add_items(); 
-                item->set_key(aitr->first);
-                varray const & varr = aitr->second;
-                for (unsigned i=0;i<varr.size();++i) {
-                    ::carmen::proto::object_array * array = item->add_arrays();
-                    std::vector<uint64_t> const& vals = varr[i];
-                    for (unsigned j=0;j<vals.size();++j) {
-                        array->add_val(vals[j]);
+                TestPipe pipe;
+                capnp::writePackedMessage(pipe, message);
+                NanReturnValue(node::Buffer::New(pipe.getData().data(),pipe.getData().size())->handle_);
+            } else {
+                carmen::proto::object msg;
+                while (aitr != aend) {
+                    ::carmen::proto::object_item * item = msg.add_items(); 
+                    item->set_key(aitr->first);
+                    varray const & varr = aitr->second;
+                    unsigned varr_size = varr.size();
+                    item->set_size(varr_size);
+                    for (unsigned i=0;i<varr_size;++i) {
+                        ::carmen::proto::object_array * array = item->add_arrays();
+                        std::vector<uint64_t> const& vals = varr[i];
+                        for (unsigned j=0;j<vals.size();++j) {
+                            array->add_val(vals[j]);
+                        }
                     }
+                    ++aitr;
                 }
-                ++aitr;
+                int size = msg.ByteSize();
+        #if NODE_VERSION_AT_LEAST(0, 11, 0)
+                Local<Object> retbuf = node::Buffer::New(size);
+                if (msg.SerializeToArray(node::Buffer::Data(retbuf),size))
+                {
+                    NanReturnValue(retbuf);
+                }
+        #else
+                node::Buffer *retbuf = node::Buffer::New(size);
+                if (msg.SerializeToArray(node::Buffer::Data(retbuf),size))
+                {
+                    NanReturnValue(retbuf->handle_);
+                }
+        #endif
             }
-            int size = msg.ByteSize();
-    #if NODE_VERSION_AT_LEAST(0, 11, 0)
-            Local<Object> retbuf = node::Buffer::New(size);
-            if (msg.SerializeToArray(node::Buffer::Data(retbuf),size))
-            {
-                NanReturnValue(retbuf);
-            }
-    #else
-            node::Buffer *retbuf = node::Buffer::New(size);
-            if (msg.SerializeToArray(node::Buffer::Data(retbuf),size))
-            {
-                NanReturnValue(retbuf->handle_);
-            }
-    #endif
         }
+    } catch (std::exception const& ex) {
+        return NanThrowTypeError(ex.what());
     }
 
     NanReturnValue(Undefined());
@@ -469,7 +475,7 @@ NAN_METHOD(Cache::load)
                 if (message.tag == 1) {
                     uint32_t bytes = message.varint();
                     llmr::pbf item(message.data, bytes);
-                    int64_t key_id;
+                    uint64_t key_id;
                     while (item.next()) {
                         if (item.tag == 1) {
                             key_id = item.varint();
