@@ -430,11 +430,25 @@ NAN_METHOD(Cache::load)
             unsigned items_size = items.size();
             for (unsigned i=0;i<items_size;++i) {
                 auto item = items[i];
-                uint64_t key_id = item.getKey();
-                arrc.emplace(key_id,varray());
-                varray & vv = arrc[key_id];
                 auto array = item.getArrays();
                 unsigned array_size = array.size();
+                uint64_t key_id = item.getKey();
+                #if 1
+                varray vv(array_size);
+                for (unsigned j=0;j<array_size;++j) {
+                    auto arr = array[j];
+                    auto vals = arr.getVal();
+                    unsigned vals_size = vals.size();
+                    std::vector<uint64_t> vvals(vals_size);
+                    for (unsigned k=0;k<vals_size;++k) {
+                        vvals[k] = vals[k];
+                    }
+                    vv[j] = std::move(vvals);
+                }
+                arrc[key_id] = std::move(vv);
+                #else
+                arrc.emplace(key_id,varray());;
+                varray & vv = arrc[key_id];
                 vv.reserve(array_size);
                 for (unsigned j=0;j<array_size;++j) {
                     auto arr = array[j];
@@ -447,6 +461,7 @@ NAN_METHOD(Cache::load)
                         vvals.emplace_back(vals[k]);
                     }
                 }
+                #endif
             }
         } else {
             llmr::pbf message(cdata,size);
