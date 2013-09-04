@@ -475,7 +475,7 @@ NAN_METHOD(Cache::load)
                 if (message.tag == 1) {
                     uint32_t bytes = message.varint();
                     llmr::pbf item(message.data, bytes);
-                    uint64_t key_id;
+                    uint64_t key_id = 0;
                     while (item.next()) {
                         if (item.tag == 1) {
                             key_id = item.varint();
