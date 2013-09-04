@@ -147,11 +147,13 @@ NAN_METHOD(Cache::pack)
         Cache* c = node::ObjectWrap::Unwrap<Cache>(args.This());
         memcache const& mem = c->cache_;
         mem_iterator_type itr = mem.find(key);
-        if (itr != mem.end()) {
-            arraycache_iterator aitr = itr->second.begin();
-            arraycache_iterator aend = itr->second.end();
-            unsigned idx = 0;
-            if (encoding == "capnproto") {
+        if (encoding == "capnproto") {
+            if (itr == mem.end()) {
+                NanReturnValue(Undefined());
+            } else {
+                arraycache_iterator aitr = itr->second.begin();
+                arraycache_iterator aend = itr->second.end();
+                unsigned idx = 0;
                 uint firstSegmentWords = 1024*1024*1024;
                 ::capnp::AllocationStrategy allocationStrategy = ::capnp::SUGGESTED_ALLOCATION_STRATEGY;
                 ::capnp::MallocMessageBuilder message(firstSegmentWords,allocationStrategy);
@@ -177,7 +179,13 @@ NAN_METHOD(Cache::pack)
                 TestPipe pipe;
                 capnp::writePackedMessage(pipe, message);
                 NanReturnValue(node::Buffer::New(pipe.getData().data(),pipe.getData().size())->handle_);
+            }
+        } else {
+            if (itr == mem.end()) {
+                NanReturnValue(Undefined());
             } else {
+                arraycache_iterator aitr = itr->second.begin();
+                arraycache_iterator aend = itr->second.end();
                 carmen::proto::object msg;
                 while (aitr != aend) {
                     ::carmen::proto::object_item * item = msg.add_items(); 
@@ -194,25 +202,24 @@ NAN_METHOD(Cache::pack)
                     ++aitr;
                 }
                 int size = msg.ByteSize();
-        #if NODE_VERSION_AT_LEAST(0, 11, 0)
+                #if NODE_VERSION_AT_LEAST(0, 11, 0)
                 Local<Object> retbuf = node::Buffer::New(size);
                 if (msg.SerializeToArray(node::Buffer::Data(retbuf),size))
                 {
                     NanReturnValue(retbuf);
                 }
-        #else
+                #else
                 node::Buffer *retbuf = node::Buffer::New(size);
                 if (msg.SerializeToArray(node::Buffer::Data(retbuf),size))
                 {
                     NanReturnValue(retbuf->handle_);
                 }
-        #endif
+                #endif
             }
         }
     } catch (std::exception const& ex) {
         return NanThrowTypeError(ex.what());
     }
-
     NanReturnValue(Undefined());
 }
 
