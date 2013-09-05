@@ -82,6 +82,7 @@ describe('cache unit', function() {
     });
 
     it('cache load/pack/load round trip', function() {
+        // test all
         ['grid','term'].forEach(function(type) {
             for (var shard=0;shard<=2;++shard) {
                 var cache = new Cache('a', 1);
@@ -99,6 +100,23 @@ describe('cache unit', function() {
                 assert.ok(cache2.get(type,ids[0]).length > 0);
             }
         });
+        // test one focusing on get() results
+        var type = 'grid';
+        var shard = 0;
+        var cache = new Cache('a', 1);
+        assert.deepEqual([], cache.list(type));
+        var filename = __dirname + '/fixtures/' + type + '.' + shard + file_ext;
+        cache.load(fs.readFileSync(filename), type, shard, encoding);
+        assert.deepEqual([shard], cache.list(type));
+        var ids = cache.list(type,shard);
+        assert.deepEqual(489,ids.length);
+        var packed = cache.pack(type,shard,encoding);
+        assert.ok(packed);
+        var cache2 = new Cache('a', 1);
+        cache2.load(packed,type,shard,encoding);
+        assert.deepEqual(ids,cache2.list(type,shard));
+        assert.deepEqual([[100303,1100011150000704],[169059,1100011150000704]],cache2.get(type,100737132572928));
+
     });
 
 });
