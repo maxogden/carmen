@@ -419,7 +419,6 @@ NAN_METHOD(Cache::set)
             vv.reserve(1);
             vv.emplace_back(std::vector<uint64_t>());
             std::vector<uint64_t> & vvals = vv.back();
-            vvals.reserve(array_size);
             for (unsigned i=0;i<array_size;++i) {
                 vvals.emplace_back(data->Get(i)->NumberValue());
             }
@@ -430,176 +429,6 @@ NAN_METHOD(Cache::set)
     NanReturnValue(Undefined());
 }
 
-NAN_METHOD(Cache::search)
-{
-    NanScope();
-    if (args.Length() < 3) {
-        return NanThrowTypeError("expected two args: type, shard, and id");
-    }
-    if (!args[0]->IsString()) {
-        return NanThrowTypeError("first arg must be a string");
-    }
-    if (!args[1]->IsNumber()) {
-        return NanThrowTypeError("second arg must be an integer");
-    }
-    if (!args[2]->IsNumber()) {
-        return NanThrowTypeError("third arg must be an integer");
-    }
-    try {
-        std::string type = *String::Utf8Value(args[0]->ToString());
-        std::string shard = *String::Utf8Value(args[1]->ToString());
-        uint64_t id = args[2]->NumberValue();
-        std::string key = type + "-" + shard;
-        Cache* c = node::ObjectWrap::Unwrap<Cache>(args.This());
-        memcache & mem = c->cache_;
-        mem_iterator_type itr = mem.find(key);
-        if (itr == mem.end()) {
-            #ifdef USE_LAZY_PROTO_CACHE
-            lazycache const& lazy = c->lazy_;
-            lazycache_iterator_type litr = lazy.find(key);
-            if (litr == lazy.end()) {
-                NanReturnValue(Undefined());
-            }
-            larraycache_iterator laitr = litr->second.find(id);
-            if (laitr == litr->second.end()) {
-                NanReturnValue(Undefined());
-            } else {
-                #ifdef LAZY_CACHE_ITEM
-                varray array; // TODO - reserve
-                string_ref_type const& ref = laitr->second;
-                protobuf::message item(ref.data(), ref.size());
-                while (item.next()) {
-                    if (item.tag == 1) {
-                        item.skip();
-                        //std::clog << "skipping id!!!\n";
-                    } else if (item.tag == 2) {
-                        uint32_t arrays_length = item.varint();
-                        protobuf::message pbfarray(item.data,arrays_length);
-                        while (pbfarray.next()) {
-                            if (pbfarray.tag == 1) {
-                                array.emplace_back(std::vector<uint64_t>());
-                                std::vector<uint64_t> & vvals = array.back();
-                                uint32_t vals_length = pbfarray.varint();
-                                protobuf::message val(pbfarray.data,vals_length);
-                                while (val.next()) {
-                                    vvals.emplace_back(val.value);
-                                }
-                                pbfarray.skipBytes(vals_length);
-                            } else {
-                                throw std::runtime_error("skipping when shouldnt");
-                                pbfarray.skip();
-                            }
-                        }
-                        item.skipBytes(arrays_length);
-                    } else {
-                        throw std::runtime_error("hit unknown type");
-                    }
-                }
-                #else
-                string_array_type const& refs = laitr->second;
-                varray array; // TODO - reserve
-                unsigned arrays_length = refs.size();
-                for (unsigned i=0;i<arrays_length;++i) {
-                    protobuf::message pbfarray(refs[i].data(),refs[i].size());
-                    while (pbfarray.next()) {
-                        if (pbfarray.tag == 1) {
-                            array.emplace_back(std::vector<uint64_t>());
-                            std::vector<uint64_t> & vvals = array.back();
-                            uint32_t vals_length = pbfarray.varint();
-                            protobuf::message val(pbfarray.data,vals_length);
-                            while (val.next()) {
-                                vvals.emplace_back(val.value);
-                            }
-                            pbfarray.skipBytes(vals_length);
-                        } else {
-                            throw std::runtime_error("skipping when shouldnt");
-                            pbfarray.skip();
-                        }
-                    }
-                }
-                #endif
-                // stick in main cache
-                c->cache_.insert(std::make_pair(key,arraycache()));    
-                arraycache & arrc = c->cache_[key];
-                arraycache_iterator itr2 = arrc.find(id);
-                if (itr2 == arrc.end()) {
-                    arrc.insert(std::make_pair(id,varray()));   
-                }
-                varray & vv = arrc[id];
-                if (itr2 != arrc.end()) {
-                    vv.clear();
-                }
-
-                if (type == "grid") {
-                    unsigned array_size = array.size();
-                    vv.reserve(array_size);
-                    Local<Array> arr_obj = Array::New(array_size);
-                    for (unsigned j=0;j<array_size;++j) {
-                        vv.emplace_back(std::vector<uint64_t>());
-                        std::vector<uint64_t> & vvals = vv.back();
-                        auto arr = array[j];
-                        unsigned vals_size = arr.size();
-                        vvals.reserve(vals_size);
-                        Local<Array> vals_obj = Array::New(vals_size);
-                        for (unsigned k=0;k<vals_size;++k) {
-                            vvals.emplace_back(arr[k]);
-                            vals_obj->Set(k,Number::New(arr[k]));
-                        }
-                        arr_obj->Set(j,vals_obj);
-                    }
-                    NanReturnValue(arr_obj);
-                } else {
-                    vv.reserve(1);
-                    vv.emplace_back(std::vector<uint64_t>());
-                    std::vector<uint64_t> & vvals = vv.back();
-                    auto arr = array[0];
-                    unsigned vals_size = arr.size();
-                    vvals.reserve(vals_size);
-                    Local<Array> arr_obj = Array::New(vals_size);
-                    for (unsigned k=0;k<vals_size;++k) {
-                        vvals.emplace_back(arr[k]);
-                        arr_obj->Set(k,Number::New(arr[k]));
-                    }
-                    NanReturnValue(arr_obj);
-                }
-            }
-            #else
-            NanReturnValue(Undefined());
-            #endif
-        } else {
-            arraycache_iterator aitr = itr->second.find(id);
-            if (aitr == itr->second.end()) {
-                NanReturnValue(Undefined());
-            } else {
-                auto const& array = aitr->second;
-                if (type == "grid") {
-                    unsigned array_size = array.size();
-                    Local<Array> arr_obj = Array::New(array_size);
-                    for (unsigned j=0;j<array_size;++j) {
-                        auto arr = array[j];
-                        unsigned vals_size = arr.size();
-                        Local<Array> vals_obj = Array::New(vals_size);
-                        for (unsigned k=0;k<vals_size;++k) {
-                            vals_obj->Set(k,Number::New(arr[k]));
-                        }
-                        arr_obj->Set(j,vals_obj);
-                    }
-                    NanReturnValue(arr_obj);
-                } else {
-                    auto arr = array[0];
-                    unsigned vals_size = arr.size();
-                    Local<Array> arr_obj = Array::New(vals_size);
-                    for (unsigned k=0;k<vals_size;++k) {
-                        arr_obj->Set(k,Number::New(arr[k]));
-                    }
-                    NanReturnValue(arr_obj);
-                }
-            }
-        }
-    } catch (std::exception const& ex) {
-        return NanThrowTypeError(ex.what());
-    }
-}
 NAN_METHOD(Cache::loadJSON)
 {
     NanScope();
@@ -910,6 +739,154 @@ NAN_METHOD(Cache::has)
     }
 }
 
+NAN_METHOD(Cache::search)
+{
+    NanScope();
+    if (args.Length() < 3) {
+        return NanThrowTypeError("expected two args: type, shard, and id");
+    }
+    if (!args[0]->IsString()) {
+        return NanThrowTypeError("first arg must be a string");
+    }
+    if (!args[1]->IsNumber()) {
+        return NanThrowTypeError("second arg must be an integer");
+    }
+    if (!args[2]->IsNumber()) {
+        return NanThrowTypeError("third arg must be an integer");
+    }
+    try {
+        std::string type = *String::Utf8Value(args[0]->ToString());
+        std::string shard = *String::Utf8Value(args[1]->ToString());
+        uint64_t id = args[2]->NumberValue();
+        std::string key = type + "-" + shard;
+        Cache* c = node::ObjectWrap::Unwrap<Cache>(args.This());
+        memcache & mem = c->cache_;
+        mem_iterator_type itr = mem.find(key);
+        if (itr == mem.end()) {
+            #ifdef USE_LAZY_PROTO_CACHE
+            lazycache const& lazy = c->lazy_;
+            lazycache_iterator_type litr = lazy.find(key);
+            if (litr == lazy.end()) {
+                NanReturnValue(Undefined());
+            }
+            larraycache_iterator laitr = litr->second.find(id);
+            if (laitr == litr->second.end()) {
+                NanReturnValue(Undefined());
+            } else {
+                #ifdef LAZY_CACHE_ITEM
+                varray array; // TODO - reserve
+                string_ref_type const& ref = laitr->second;
+                protobuf::message item(ref.data(), ref.size());
+                while (item.next()) {
+                    if (item.tag == 1) {
+                        item.skip();
+                        //std::clog << "skipping id!!!\n";
+                    } else if (item.tag == 2) {
+                        uint32_t arrays_length = item.varint();
+                        protobuf::message pbfarray(item.data,arrays_length);
+                        while (pbfarray.next()) {
+                            if (pbfarray.tag == 1) {
+                                array.emplace_back(std::vector<uint64_t>());
+                                std::vector<uint64_t> & vvals = array.back();
+                                uint32_t vals_length = pbfarray.varint();
+                                protobuf::message val(pbfarray.data,vals_length);
+                                while (val.next()) {
+                                    vvals.emplace_back(val.value);
+                                }
+                                pbfarray.skipBytes(vals_length);
+                            } else {
+                                throw std::runtime_error("skipping when shouldnt");
+                                pbfarray.skip();
+                            }
+                        }
+                        item.skipBytes(arrays_length);
+                    } else {
+                        throw std::runtime_error("hit unknown type");
+                    }
+                }
+                #else
+                string_array_type const& refs = laitr->second;
+                varray array; // TODO - reserve
+                unsigned arrays_length = refs.size();
+                for (unsigned i=0;i<arrays_length;++i) {
+                    protobuf::message pbfarray(refs[i].data(),refs[i].size());
+                    while (pbfarray.next()) {
+                        if (pbfarray.tag == 1) {
+                            array.emplace_back(std::vector<uint64_t>());
+                            std::vector<uint64_t> & vvals = array.back();
+                            uint32_t vals_length = pbfarray.varint();
+                            protobuf::message val(pbfarray.data,vals_length);
+                            while (val.next()) {
+                                vvals.emplace_back(val.value);
+                            }
+                            pbfarray.skipBytes(vals_length);
+                        } else {
+                            throw std::runtime_error("skipping when shouldnt");
+                            pbfarray.skip();
+                        }
+                    }
+                }
+                #endif
+                if (type == "grid") {
+                    unsigned array_size = array.size();
+                    Local<Array> arr_obj = Array::New(array_size);
+                    for (unsigned j=0;j<array_size;++j) {
+                        auto arr = array[j];
+                        unsigned vals_size = arr.size();
+                        Local<Array> vals_obj = Array::New(vals_size);
+                        for (unsigned k=0;k<vals_size;++k) {
+                            vals_obj->Set(k,Number::New(arr[k]));
+                        }
+                        arr_obj->Set(j,vals_obj);
+                    }
+                    NanReturnValue(arr_obj);
+                } else {
+                    auto arr = array[0];
+                    unsigned vals_size = arr.size();
+                    Local<Array> arr_obj = Array::New(vals_size);
+                    for (unsigned k=0;k<vals_size;++k) {
+                        arr_obj->Set(k,Number::New(arr[k]));
+                    }
+                    NanReturnValue(arr_obj);
+                }
+            }
+            #else
+            NanReturnValue(Undefined());
+            #endif
+        } else {
+            arraycache_iterator aitr = itr->second.find(id);
+            if (aitr == itr->second.end()) {
+                NanReturnValue(Undefined());
+            } else {
+                auto const& array = aitr->second;
+                if (type == "grid") {
+                    unsigned array_size = array.size();
+                    Local<Array> arr_obj = Array::New(array_size);
+                    for (unsigned j=0;j<array_size;++j) {
+                        auto arr = array[j];
+                        unsigned vals_size = arr.size();
+                        Local<Array> vals_obj = Array::New(vals_size);
+                        for (unsigned k=0;k<vals_size;++k) {
+                            vals_obj->Set(k,Number::New(arr[k]));
+                        }
+                        arr_obj->Set(j,vals_obj);
+                    }
+                    NanReturnValue(arr_obj);
+                } else {
+                    auto arr = array[0];
+                    unsigned vals_size = arr.size();
+                    Local<Array> arr_obj = Array::New(vals_size);
+                    for (unsigned k=0;k<vals_size;++k) {
+                        arr_obj->Set(k,Number::New(arr[k]));
+                    }
+                    NanReturnValue(arr_obj);
+                }
+            }
+        }
+    } catch (std::exception const& ex) {
+        return NanThrowTypeError(ex.what());
+    }
+}
 
 NAN_METHOD(Cache::New)
 {
