@@ -1,3 +1,4 @@
+export CXX="${HOME}/clang-3.2/bin/clang++"
 export CPLUS_INCLUDE_PATH=/Users/dane/projects/mapnik-packaging/osx/out/build-libc++-x86_64/include/
 export LIBRARY_PATH=/Users/dane/projects/mapnik-packaging/osx/out/build-libc++-x86_64/lib
 export DYLD_LIBRARY_PATH=/Users/dane/projects/mapnik-packaging/osx/out/build-libc++-x86_64/lib

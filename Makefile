@@ -14,7 +14,7 @@ src/flat-array.capnp.c++: flat-array.capnp Makefile
 	capnp compile -oc++:src flat-array.capnp
 
 convert: convert.c++ Makefile
-	$(HOME)/clang-3.2/bin/clang++ -I/Users/dane/projects/node/deps/v8/include \
+	$(CXX) -I/Users/dane/projects/node/deps/v8/include \
 	  /Users/dane/projects/node/out/Release/libv8_base.x64.a \
 	  /Users/dane/projects/node/out/Release/libv8_nosnapshot.x64.a \
 	  -std=gnu++11 -stdlib=libc++ -Wall -O3 -DDEBUG convert.c++ src/index.capnp.cpp -lkj -lcapnp -o convert
@@ -31,10 +31,10 @@ src/index.pb.cc: index.proto Makefile
 	protoc -I./ --cpp_out=./src ./index.proto
 
 vector: vector.c++ Makefile
-	$(HOME)/clang-3.2/bin/clang++ -std=gnu++11 -stdlib=libc++ -Wall -O3 -DDEBUG vector.c++ src/flat-array.capnp.c++ -lkj -lcapnp -o vector
+	$(CXX) -std=gnu++11 -stdlib=libc++ -Wall -O3 -DDEBUG vector.c++ src/flat-array.capnp.c++ -lkj -lcapnp -o vector
 
 mem.node:
-	export CXX=$(HOME)/clang-3.2/bin/clang++ && `npm explore npm -g -- pwd`/bin/node-gyp-bin/node-gyp build --verbose
+	node-gyp build --verbose
 
 clean:
 	@rm -f ./index_pb2.py
