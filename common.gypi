@@ -11,8 +11,9 @@
               }
           },
           'Release': {
+              'defines': ['-DNDEBUG'],
               'xcode_settings': {
-                'OTHER_CPLUSPLUSFLAGS':['-DNDEBUG'],
+                'OTHER_CPLUSPLUSFLAGS':[],
                 'GCC_OPTIMIZATION_LEVEL': '3',
                 'GCC_GENERATE_DEBUGGING_SYMBOLS': 'NO',
                 'DEAD_CODE_STRIPPING':'YES',
