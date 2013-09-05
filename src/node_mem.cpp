@@ -32,7 +32,7 @@
 #include <vector>
 
 #define USE_LAZY_PROTO_CACHE
-#define LAZY_CACHE_ITEM
+//#define LAZY_CACHE_ITEM
 
 // TODO
 // - add ability to materialize lazy cache or just simplify and only use lazy cache
@@ -181,19 +181,17 @@ NAN_METHOD(Cache::pack)
                 NanReturnValue(node::Buffer::New(pipe.getData().data(),pipe.getData().size())->handle_);
             }
         } else {
-            if (itr == mem.end()) {
-                NanReturnValue(Undefined());
-            } else {
+            carmen::proto::object msg;
+            if (itr != mem.end()) {
                 arraycache_iterator aitr = itr->second.begin();
                 arraycache_iterator aend = itr->second.end();
-                carmen::proto::object msg;
                 while (aitr != aend) {
-                    ::carmen::proto::object_item * item = msg.add_items(); 
-                    item->set_key(aitr->first);
+                    ::carmen::proto::object_item * new_item = msg.add_items(); 
+                    new_item->set_key(aitr->first);
                     varray const & varr = aitr->second;
                     unsigned varr_size = varr.size();
                     for (unsigned i=0;i<varr_size;++i) {
-                        ::carmen::proto::object_array * array = item->add_arrays();
+                        ::carmen::proto::object_array * array = new_item->add_arrays();
                         std::vector<uint64_t> const& vals = varr[i];
                         for (unsigned j=0;j<vals.size();++j) {
                             array->add_val(vals[j]);
@@ -201,21 +199,88 @@ NAN_METHOD(Cache::pack)
                     }
                     ++aitr;
                 }
-                int size = msg.ByteSize();
-                #if NODE_VERSION_AT_LEAST(0, 11, 0)
-                Local<Object> retbuf = node::Buffer::New(size);
-                if (msg.SerializeToArray(node::Buffer::Data(retbuf),size))
-                {
-                    NanReturnValue(retbuf);
+            } else {
+                #ifdef USE_LAZY_PROTO_CACHE
+                lazycache & lazy = c->lazy_;
+                lazycache_iterator_type litr = lazy.begin();
+                lazycache_iterator_type lend = lazy.end();
+                while (litr != lend) {
+                    larraycache_iterator laitr = litr->second.begin();
+                    larraycache_iterator laend = litr->second.end();
+                    while (laitr != laend) {
+                        ::carmen::proto::object_item * new_item = msg.add_items();
+                        new_item->set_key(laitr->first);
+                        #ifdef LAZY_CACHE_ITEM
+                        string_ref_type const& ref = laitr->second;
+                        protobuf::message item(ref.data(), ref.size());
+                        while (item.next()) {
+                            if (item.tag == 1) {
+                                item.skip();
+                            } else if (item.tag == 2) {
+                                uint32_t arrays_length = item.varint();
+                                protobuf::message pbfarray(item.data,arrays_length);
+                                ::carmen::proto::object_array * new_array = new_item->add_arrays();
+                                while (pbfarray.next()) {
+                                    if (pbfarray.tag == 1) {
+                                        uint32_t vals_length = pbfarray.varint();
+                                        protobuf::message val(pbfarray.data,vals_length);
+                                        while (val.next()) {
+                                            new_array->add_val(val.value);
+                                        }
+                                        pbfarray.skipBytes(vals_length);
+                                    } else {
+                                        throw std::runtime_error("skipping when shouldnt");
+                                        pbfarray.skip();
+                                    }
+                                }
+                                item.skipBytes(arrays_length);
+                            } else {
+                                throw std::runtime_error("hit unknown type");
+                            }
+                        }
+                        #else
+                        string_array_type const& refs = laitr->second;
+                        unsigned arrays_length = refs.size();
+                        for (unsigned i=0;i<arrays_length;++i) {
+                            protobuf::message pbfarray(refs[i].data(),refs[i].size());
+                            ::carmen::proto::object_array * new_array = new_item->add_arrays();
+                            while (pbfarray.next()) {
+                                if (pbfarray.tag == 1) {
+                                    uint32_t vals_length = pbfarray.varint();
+                                    protobuf::message val(pbfarray.data,vals_length);
+                                    while (val.next()) {
+                                        new_array->add_val(val.value);
+                                    }
+                                    pbfarray.skipBytes(vals_length);
+                                } else {
+                                    throw std::runtime_error("skipping when shouldnt");
+                                    pbfarray.skip();
+                                }
+                            }
+                        }
+                        #endif
+                        ++laitr;
+                    }
+                    ++litr;
                 }
                 #else
-                node::Buffer *retbuf = node::Buffer::New(size);
-                if (msg.SerializeToArray(node::Buffer::Data(retbuf),size))
-                {
-                    NanReturnValue(retbuf->handle_);
-                }
+                NanReturnValue(Undefined());                
                 #endif
             }
+            int size = msg.ByteSize();
+            #if NODE_VERSION_AT_LEAST(0, 11, 0)
+            Local<Object> retbuf = node::Buffer::New(size);
+            if (msg.SerializeToArray(node::Buffer::Data(retbuf),size))
+            {
+                NanReturnValue(retbuf);
+            }
+            #else
+            node::Buffer *retbuf = node::Buffer::New(size);
+            if (msg.SerializeToArray(node::Buffer::Data(retbuf),size))
+            {
+                NanReturnValue(retbuf->handle_);
+            }
+            #endif
         }
     } catch (std::exception const& ex) {
         return NanThrowTypeError(ex.what());
