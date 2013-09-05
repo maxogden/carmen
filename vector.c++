@@ -38,7 +38,7 @@ int main(int argc, char* argv[]) {
                 is.read((char*)&list2[0], size2 * sizeof(uint64_t));
         }
     } else if (strcmp(argv[1], "cwrite") == 0) {
-        kj::AutoCloseFd tmpfile(open("./data.packed",O_WRONLY | O_CREAT | O_TRUNC));
+        kj::AutoCloseFd tmpfile(open("./data.packed", O_CREAT|O_TRUNC|O_WRONLY, S_IRUSR|S_IWUSR));
         uint firstSegmentWords = sizeof(array::size_type)*total_entries;
         ::capnp::AllocationStrategy allocationStrategy = ::capnp::SUGGESTED_ALLOCATION_STRATEGY;
         ::capnp::MallocMessageBuilder message(firstSegmentWords,allocationStrategy);
