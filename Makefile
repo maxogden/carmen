@@ -3,7 +3,7 @@ PROTOBUF_LDFLAGS=$(shell pkg-config protobuf --libs-only-L) -lprotobuf-lite
 CXXFLAGS := $(CXXFLAGS) # inherit from env
 LDFLAGS := $(LDFLAGS) # inherit from env
 
-all: index_pb2.py src/index.pb.cc src/index.capnp.cpp src/flat-array.capnp.c++ mem.node vector 
+all: index_pb2.py src/index.pb.cc src/index.capnp.cpp src/flat-array.capnp.c++ mem.node
 
 src/index.capnp.cpp: index.capnp Makefile
 	capnp compile -oc++:src index.capnp
