@@ -178,7 +178,8 @@ NAN_METHOD(Cache::pack)
                 }
                 TestPipe pipe;
                 capnp::writePackedMessage(pipe, message);
-                NanReturnValue(node::Buffer::New(pipe.getData().data(),pipe.getData().size())->handle_);
+                // const cast to support node v0.8.x
+                NanReturnValue(node::Buffer::New(const_cast<char*>(pipe.getData().data()),pipe.getData().size())->handle_);
             }
         } else {
             carmen::proto::object msg;
