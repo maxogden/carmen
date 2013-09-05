@@ -7,15 +7,19 @@ UTFGrid/MBTiles-based geocoder with support for swappable data sources.
  - Node v0.8.x or Node v0.10.x
  - sqlite3 command line program (`apt-get install sqlite3`)
  - node-gyp >= v0.10.4 (`npm install node-gyp@latest -g`)
- - boost: libboost-locale-dev libboost-dev, libboost-regex-dev, libboost-thread-dev
- - libicu-dev
  - g++ compiler >= 4.7.x (available on >= Ubuntu raring)
-   - 4.6.x works (what Ubuntu precise has) but you will need to edit
-     the binding gyp and replace `-std=c++11` with `-std=c++0x`
+ - capnproto installed like https://gist.github.com/springmeyer/6444804
+ - libprotobuf and protobuf-compiler
+
 
 ## Install
 
-    npm install && ./scripts/install-dbs.sh
+    ./configure
+    make
+    node convert.js
+    npm install mocha
+    make test
+    node bench/load-query.js
 
 Installs dependencies and downloads the default tiles indexes (about 1GB of data).
 
