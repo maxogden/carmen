@@ -32,7 +32,7 @@
 #include <vector>
 
 #define USE_LAZY_PROTO_CACHE
-//#define LAZY_CACHE_ITEM
+#define LAZY_CACHE_ITEM
 
 // TODO
 // - add ability to materialize lazy cache or just simplify and only use lazy cache
@@ -390,13 +390,13 @@ NAN_METHOD(Cache::set)
         memcache & mem = c->cache_;
         mem_iterator_type itr = mem.find(key);
         if (itr == mem.end()) {
-            c->cache_.emplace(key,arraycache());    
+            c->cache_.insert(std::make_pair(key,arraycache()));    
         }
         arraycache & arrc = c->cache_[key];
         uint64_t key_id = args[2]->NumberValue();
         arraycache_iterator itr2 = arrc.find(key_id);
         if (itr2 == arrc.end()) {
-            arrc.emplace(key_id,varray());   
+            arrc.insert(std::make_pair(key_id,varray()));   
         }
         varray & vv = arrc[key_id];
         if (itr2 != arrc.end()) {
@@ -456,7 +456,7 @@ NAN_METHOD(Cache::loadJSON)
         memcache & mem = c->cache_;
         mem_iterator_type itr = mem.find(key);
         if (itr == mem.end()) {
-            c->cache_.emplace(key,arraycache());    
+            c->cache_.insert(std::make_pair(key,arraycache()));    
         }
         arraycache & arrc = c->cache_[key];
         v8::Local<v8::Array> propertyNames = obj->GetPropertyNames();
@@ -466,7 +466,7 @@ NAN_METHOD(Cache::loadJSON)
             v8::Local<v8::Value> prop = obj->Get(key);
             if (prop->IsArray()) {
                 uint64_t key_id = key->NumberValue();
-                arrc.emplace(key_id,varray());
+                arrc.insert(std::make_pair(key_id,varray()));
                 varray & vv = arrc[key_id];
                 v8::Local<v8::Array> arr = v8::Local<v8::Array>::Cast(prop);
                 if (type == "grid") {
@@ -548,7 +548,7 @@ NAN_METHOD(Cache::load)
         memcache & mem = c->cache_;
         mem_iterator_type itr = mem.find(key);
         if (itr == mem.end()) {
-            c->cache_.emplace(key,arraycache());    
+            c->cache_.insert(std::make_pair(key,arraycache()));    
         }
         arraycache & arrc = c->cache_[key];
         if (encoding == "capnproto") {
@@ -576,7 +576,7 @@ NAN_METHOD(Cache::load)
                 }
                 arrc[key_id] = std::move(vv);
                 #else
-                arrc.emplace(key_id,varray());;
+                arrc.insert(std::make_pair(key_id,varray()));
                 varray & vv = arrc[key_id];
                 vv.reserve(array_size);
                 for (unsigned j=0;j<array_size;++j) {
@@ -602,7 +602,7 @@ NAN_METHOD(Cache::load)
             lazycache & lazy = c->lazy_;
             lazycache_iterator_type litr = lazy.find(key);
             if (litr == lazy.end()) {
-                c->lazy_.emplace(key,larraycache());    
+                c->lazy_.insert(std::make_pair(key,larraycache()));    
             }
             larraycache & larrc = c->lazy_[key];
                 #ifdef LAZY_CACHE_ITEM
@@ -615,7 +615,7 @@ NAN_METHOD(Cache::load)
                                 uint64_t key_id = item.varint();
                                 // NOTE: emplace is faster if using std::string
                                 // if using boost::string_ref, std::move is faster
-                                larrc.emplace(key_id,string_ref_type((const char *)message.data,bytes));
+                                larrc.insert(std::make_pair(key_id,std::move(string_ref_type((const char *)message.data,bytes))));
                             } else {
                                 break;
                             }
@@ -635,7 +635,7 @@ NAN_METHOD(Cache::load)
                         while (item.next()) {
                             if (item.tag == 1) {
                                 key_id = item.varint();
-                                larrc.emplace(key_id,string_array_type());
+                                larrc.insert(std::make_pair(key_id,string_array_type()));
                             } else if (item.tag == 2) {
                                 if (key_id == 0) throw std::runtime_error("key_id not initialized!");
                                 uint32_t arrays_length = item.varint();
@@ -662,7 +662,7 @@ NAN_METHOD(Cache::load)
                     while (item.next()) {
                         if (item.tag == 1) {
                             key_id = item.varint();
-                            arrc.emplace(key_id,varray());
+                            arrc.insert(std::make_pair(key_id,varray());
                         } else if (item.tag == 2) {
                             if (key_id == 0) throw std::runtime_error("key_id not initialized!");
                             varray & vv = arrc[key_id];
