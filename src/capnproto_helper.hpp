@@ -1,3 +1,4 @@
+#include <limits>
 
 class TestPipe: public kj::BufferedInputStream, public kj::OutputStream {
 public:
