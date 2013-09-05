@@ -532,12 +532,12 @@ NAN_METHOD(Cache::load)
     try {
         std::string encoding("capnproto");
         if (args.Length() > 3) {
-            if (!args[3]->IsString()) {
-                return NanThrowTypeError("third arg must be a string");
-            }
-            encoding = *String::Utf8Value(args[3]->ToString());
-            if (encoding != "protobuf" && encoding != "capnproto") {
-                return NanThrowTypeError((std::string("invalid encoding: ")+ encoding).c_str());
+            // ignore undefined/null
+            if (args[3]->IsString()) {
+                encoding = *String::Utf8Value(args[3]->ToString());
+                if (encoding != "protobuf" && encoding != "capnproto") {
+                    return NanThrowTypeError((std::string("invalid encoding: ")+ encoding).c_str());
+                }
             }
         }
         const char * cdata = node::Buffer::Data(obj);
