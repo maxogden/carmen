@@ -96,6 +96,7 @@ describe('cache unit', function() {
                 var cache2 = new Cache('a', 1);
                 cache2.load(packed,type,shard,encoding);
                 assert.deepEqual(ids,cache2.list(type,shard));
+                assert.ok(cache2.get(type,ids[0]).length > 0);
             }
         });
     });
