@@ -130,7 +130,7 @@ NAN_METHOD(Cache::pack)
     if (!args[1]->IsNumber()) {
         return NanThrowTypeError("second arg must be an integer");
     }
-    std::string encoding("capnproto");
+    std::string encoding("protobuf");
     if (args.Length() > 2) {
         if (!args[2]->IsString()) {
             return NanThrowTypeError("third arg must be a string");
@@ -530,7 +530,7 @@ NAN_METHOD(Cache::load)
         return NanThrowTypeError("third arg 'shard' must be an Integer");
     }
     try {
-        std::string encoding("capnproto");
+        std::string encoding("protobuf");
         if (args.Length() > 3) {
             // ignore undefined/null
             if (args[3]->IsString()) {
