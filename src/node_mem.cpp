@@ -419,6 +419,7 @@ NAN_METHOD(Cache::set)
             vv.reserve(1);
             vv.emplace_back(std::vector<uint64_t>());
             std::vector<uint64_t> & vvals = vv.back();
+            vvals.reserve(array_size);
             for (unsigned i=0;i<array_size;++i) {
                 vvals.emplace_back(data->Get(i)->NumberValue());
             }
