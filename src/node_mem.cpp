@@ -663,7 +663,7 @@ NAN_METHOD(Cache::load)
                     while (item.next()) {
                         if (item.tag == 1) {
                             key_id = item.varint();
-                            arrc.insert(std::make_pair(key_id,varray());
+                            arrc.insert(std::make_pair(key_id,varray()));
                         } else if (item.tag == 2) {
                             if (key_id == 0) throw std::runtime_error("key_id not initialized!");
                             varray & vv = arrc[key_id];
