@@ -9,7 +9,7 @@ psql -d $TMP -c "create extension postgis"
 # download + import TZ geometries 
 curl -sfo $TMP/tz_world_mp.zip http://efele.net/maps/tz/world/tz_world_mp.zip
 unzip -q $TMP/tz_world_mp.zip -d $TMP
-shp2pgsql -s 4326 $TMP/world/tz_world_mp.shp import | psql -f $TMP
+shp2pgsql -s 4326 $TMP/world/tz_world_mp.shp import | psql -d $TMP
 
 # download + import offsets
 curl -sfo $TMP/tzids.csv http://www.snae.net/tzids.csv
