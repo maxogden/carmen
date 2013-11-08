@@ -23,9 +23,6 @@ INSERT INTO data (id, geometry, name, search, utc) SELECT a.gid, a.geom, a.tzid,
 UPDATE data SET lon = st_x(st_pointonsurface(geometry)), lat = st_y(st_pointonsurface(geometry)), bounds = st_xmin(geometry)||','||st_ymin(geometry)||','||st_xmax(geometry)||','||st_ymax(geometry);
 " | psql $TMP
 
-# -- UPDATE data SET lon = x(pointonsurface(geometry)), lat = y(pointonsurface(geometry)), bounds = xmin(geometry)||','||ymin(geometry)||','||xmax(geometry)||','||ymax(geometry);
-# todo: join tzid geom to offset
-
 ogr2ogr -s_srs EPSG:4326 -t_srs EPSG:900913 -f "SQLite" -nln data tz.sqlite PG:"host=localhost dbname=$TMP" data
 dropdb $TMP
 rm -rf $TMP
