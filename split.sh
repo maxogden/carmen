@@ -22,11 +22,3 @@ do
 
     rm -rf json/${country}.geojson
 done
-
-	# let i=0
-	# if [ -e json/${country}.geojson ]; then
-	# 	i=$(i + 1)
-	# 	echo $i
-	# 	country=${country}_${i}
-	# 	echo $country
-	# fi
