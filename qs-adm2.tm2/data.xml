@@ -4,7 +4,7 @@
 
 <Parameters>
   <Parameter name="center">-66.796875,15.284185114076445,1</Parameter>
-  <Parameter name="json"><![CDATA[{"vector_layers":[{"id":"data","description":"","minzoom":0,"maxzoom":22,"fields":{"OGC_FID":"Number","name":"String","search":"String","lon":"Number","lat":"Number","bounds":"String","area":"Number"}}]}]]></Parameter>
+  <Parameter name="json"><![CDATA[{"vector_layers":[{"id":"data","description":"","minzoom":0,"maxzoom":6,"fields":{"OGC_FID":"Number","name":"String","search":"String","lon":"Number","lat":"Number","bounds":"String","area":"Number"}}]}]]></Parameter>
   <Parameter name="maxzoom">6</Parameter>
   <Parameter name="minzoom">0</Parameter>
   <Parameter name="name"><![CDATA[qs-adm2]]></Parameter>
