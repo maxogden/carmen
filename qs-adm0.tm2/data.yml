@@ -1,7 +1,7 @@
 _prefs: 
   disabled: []
   inspector: false
-  saveCenter: true
+  saveCenter: false
 attribution: ''
 center: 
   - 0
