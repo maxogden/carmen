@@ -34,12 +34,12 @@
       "geometry": "polygon",
       "Datasource": {
         "type": "sqlite",
-        "file": "layers/qs-countries.sqlite",
+        "file": "layers/qs-adm0.sqlite",
         "table": "data",
         "attachdb": "",
         "extent": "",
         "id": "data",
-        "project": "qs-countries",
+        "project": "qs-adm0",
         "srs": null
       },
       "id": "data",
@@ -52,7 +52,7 @@
   "scale": 1,
   "metatile": 2,
   "_basemap": "mapbox.mapbox-light",
-  "name": "qs-countries",
+  "name": "qs-adm0",
   "description": "",
   "legend": "",
   "attribution": ""

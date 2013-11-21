@@ -32,4 +32,4 @@ UPDATE data SET search='Democratic Republic of the Congo, DRC' WHERE iso2 = 'CD'
 UPDATE data SET search='United Arab Emirates, UAE' WHERE iso2 = 'AE';
 " | sqlite3 qs-countries.sqlite
 
-echo "Written to qs-countries.sqlite."
+echo "Written to qs-adm0.sqlite."
