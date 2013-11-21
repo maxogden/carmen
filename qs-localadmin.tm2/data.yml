@@ -11,7 +11,7 @@ description: ''
 Layer: 
   - id: data
     Datasource: 
-      file: qs-adm2.sqlite
+      file: qs-localadmin.sqlite
       key_field: ''
       table: (select * from data ) as data
       type: sqlite
@@ -32,4 +32,4 @@ Layer:
 maxzoom: 6
 minzoom: 0
 mtime: 1385065290325
-name: qs-adm2
+name: qs-localadmin
