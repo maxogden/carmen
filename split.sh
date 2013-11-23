@@ -1,9 +1,13 @@
-#!/usr/bin/bash
+#!/usr/bin/env bash
 set -e -u
 
 # takes a sqlite full of carmen-redy data (assumes unique `name` field)
 # and outputs one topojson for every record
 
+if [ $1 != 'explode' -a $1 != 'collapse' ]; then
+    echo "Usage: $0 <explode | collapse> <file | dir>"
+    exit 1
+fi
 
 if [ $1 == 'explode' ]
     then
@@ -31,6 +35,7 @@ fi
 
 if [ $1 == 'collapse' ]
     then
+    # TODO : test if files are topojson?
     mkdir -p geojson
     geojson -o geojson ${2}/*json
     echo "done converting to geojson, creating sqlite file"
