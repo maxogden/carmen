@@ -1,0 +1,44 @@
+_prefs: 
+  disabled: []
+  inspector: false
+  saveCenter: true
+attribution: ''
+center: 
+  - -98.349609375
+  - 46.31658418182218
+  - 3
+description: ''
+Layer: 
+  - id: data
+    Datasource: 
+      file: 01-ne.country.sqlite
+      key_field: _id
+      table: |-
+        (select
+          ogc_fid as _id,
+          _text,
+          lon,
+          lat,
+          iso2,
+          bounds,
+          population,
+          geometry
+        from data) as data
+      type: sqlite
+    description: ''
+    fields: 
+      _id: Number
+      _text: String
+      bounds: String
+      lat: Number
+      lon: Number
+      population: Number
+    properties: 
+      "buffer-size": 4
+      maxzoom: 22
+      minzoom: 0
+    srs: +proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0.0 +k=1.0 +units=m +nadgrids=@null +wktext +no_defs +over
+maxzoom: 6
+minzoom: 0
+mtime: 1386180121873
+name: ne-countries
