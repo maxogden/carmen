@@ -19,6 +19,8 @@ dropdb -U postgres $TMP
 rm -rf $TMP
 
 echo "
+ALTER TABLE data ADD COLUMN _id INTEGER;
+UPDATE data SET _id = ogc_fid;
 UPDATE data SET _text='United States of America, United States, America, USA, US' WHERE iso2 = 'US';
 UPDATE data SET _text='United Kingdom, UK' WHERE iso2 = 'GB';
 UPDATE data SET _text='Canada, CA' WHERE iso2 = 'CA';
