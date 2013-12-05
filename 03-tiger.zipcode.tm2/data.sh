@@ -23,8 +23,8 @@ if [ ! -f $TMP/zip1999.zip ]; then
 fi
 
 # Move shapefile into postgres for processing.
-createdb -U postgres -T template_postgis tmpzcta
-ogr2ogr -s_srs EPSG:4326 -t_srs EPSG:900913 -f "PostgreSQL" -nlt MULTIPOLYGON -nln data_tmp PG:"host=localhost user=postgres dbname=tmpzcta" $TMP/tl_2012_us_zcta510.shp
+createdb -U postgres -T template_postgis carmen_tiger_zipcode 
+ogr2ogr -s_srs EPSG:4326 -t_srs EPSG:900913 -f "PostgreSQL" -nlt MULTIPOLYGON -nln data_tmp PG:"host=localhost user=postgres dbname=carmen_tiger_zipcode" $TMP/tl_2012_us_zcta510.shp
 
 echo "
 CREATE TABLE data AS SELECT ogc_fid, wkb_geometry, zcta5ce10 AS name, CAST(intptlon10 AS float) AS lon, CAST(intptlat10 AS float) AS lat, ST_XMin(ST_Transform(wkb_geometry, 4326))||','||ST_YMin(ST_Transform(wkb_geometry, 4326))||','||ST_XMax(ST_Transform(wkb_geometry, 4326))||','||ST_YMax(ST_Transform(wkb_geometry, 4326)) AS bounds FROM data_tmp;
@@ -47,11 +47,6 @@ ALTER TABLE data ADD COLUMN _text varchar;
 UPDATE data d SET _text = d.name||','||(SELECT array_to_string(array_agg(zip),',') FROM zipnov WHERE st_within(geometry, d.wkb_geometry));
 UPDATE data d SET _text = d.name WHERE d._text IS NULL;
 DROP TABLE zipnov;
-" | psql -U postgres tmpzcta 
+" | psql -U postgres carmen_tiger_zipcode 
 
-# Convert to SQLite.
-ogr2ogr -f "SQLite" -nln data 03-tiger.zipcode.sqlite PG:"host=localhost user=postgres dbname=tmpzcta"
-
-# Cleanup
-dropdb -U postgres tmpzcta 
 rm -rf $TMP
