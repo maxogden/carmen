@@ -2,10 +2,10 @@
 set -e -u
 
 TMP=`mktemp -d tmpXXXX`
-createdb -U postgres -T template_postgis $TMP
+createdb -U postgres -T template_postgis carmen_ne_province
 curl -sfo $TMP/10m-admin-1-states-provinces-shp.zip http://mapbox-geodata.s3.amazonaws.com/natural-earth-1.4.0/cultural/10m-admin-1-states-provinces-shp.zip
 unzip -q $TMP/10m-admin-1-states-provinces-shp.zip -d $TMP
-ogr2ogr --config SHAPE_ENCODING UTF-8 -s_srs EPSG:900913 -t_srs EPSG:4326 -nlt MULTIPOLYGON -nln import -f "PostgreSQL" PG:"host=localhost user=postgres dbname=$TMP" $TMP/10m-admin-1-states-provinces-shp.shp
+ogr2ogr --config SHAPE_ENCODING UTF-8 -s_srs EPSG:900913 -t_srs EPSG:4326 -nlt MULTIPOLYGON -nln import -f "PostgreSQL" PG:"host=localhost user=postgres dbname=carmen_ne_province" $TMP/10m-admin-1-states-provinces-shp.shp
 
 echo "
 CREATE TABLE data(_id SERIAL PRIMARY KEY, name VARCHAR, _text VARCHAR, lon FLOAT, lat FLOAT, bounds VARCHAR, area FLOAT);
@@ -15,15 +15,7 @@ UPDATE data SET lon = st_x(st_pointonsurface(geometry)), lat = st_y(st_pointonsu
 UPDATE data SET area = 0;
 UPDATE data SET area = st_area(st_geogfromwkb(geometry)) where st_within(geometry,st_geomfromtext('POLYGON((-180 -90, -180 90, 180 90, 180 -90, -180 -90))',4326));
 UPDATE data SET lon = -77.0170942, lat = 38.9041485 WHERE name = 'District of Columbia';
-" | psql -U postgres $TMP
+" | psql -U postgres carmen_ne_province
 
-ogr2ogr -s_srs EPSG:4326 -t_srs EPSG:900913 -f "SQLite" -nln data 02-ne.province.sqlite PG:"host=localhost user=postgres dbname=$TMP" data
-dropdb -U postgres $TMP
+# cleanup
 rm -rf $TMP
-
-echo "
-ALTER TABLE data ADD COLUMN _id INTEGER;
-UPDATE data SET _id = ogc_fid;
-" | sqlite3 02-ne.province.sqlite
-
-echo "Written to 02-ne.province.sqlite."
