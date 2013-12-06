@@ -8,6 +8,7 @@ center:
   - 44.33956524809713
   - 2
 description: ''
+geocoder_layer: data._text
 Layer: 
   - id: data
     Datasource: 
