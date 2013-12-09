@@ -1,12 +1,12 @@
 _prefs: 
   disabled: []
   inspector: false
-  saveCenter: true
+  saveCenter: false
 attribution: ''
 center: 
-  - 139.5703125
-  - 44.33956524809713
-  - 2
+  - 0
+  - 0
+  - 3
 description: ''
 geocoder_layer: data._text
 Layer: 
@@ -39,5 +39,5 @@ Layer:
     srs: +proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs
 maxzoom: 6
 minzoom: 0
-mtime: 1386267438022
+mtime: 1386560812366
 name: ne-province

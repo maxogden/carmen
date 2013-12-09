@@ -14,7 +14,10 @@ INSERT INTO data (_id, geometry, name, _text) SELECT ogc_fid, st_setsrid(wkb_geo
 UPDATE data SET lon = st_x(st_pointonsurface(geometry)), lat = st_y(st_pointonsurface(geometry)), bounds = st_xmin(geometry)||','||st_ymin(geometry)||','||st_xmax(geometry)||','||st_ymax(geometry);
 UPDATE data SET area = 0;
 UPDATE data SET area = st_area(st_geogfromwkb(geometry)) where st_within(geometry,st_geomfromtext('POLYGON((-180 -90, -180 90, 180 90, 180 -90, -180 -90))',4326));
+-- Manual adjustments.
 UPDATE data SET lon = -77.0170942, lat = 38.9041485 WHERE name = 'District of Columbia';
+UPDATE data SET _text = 'New York,New York State,NY' WHERE name = 'New York';
+UPDATE data SET _text = 'Washington,Washington State,WA' WHERE name = 'Washington';
 " | psql -U postgres carmen_ne_province
 
 # cleanup
