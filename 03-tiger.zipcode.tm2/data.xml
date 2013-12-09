@@ -7,7 +7,7 @@
   <Parameter name="format">pbf</Parameter>
   <Parameter name="geocoder_layer"><![CDATA[data._text]]></Parameter>
   <Parameter name="json"><![CDATA[{"vector_layers":[{"id":"data","description":"","minzoom":0,"maxzoom":22,"fields":{"_id":"Number","_text":"String","name":"String","lon":"Number","lat":"Number","bounds":"String"}}]}]]></Parameter>
-  <Parameter name="maxzoom">9</Parameter>
+  <Parameter name="maxzoom">10</Parameter>
   <Parameter name="minzoom">6</Parameter>
   <Parameter name="name"><![CDATA[tiger-zipcode]]></Parameter>
 </Parameters>
