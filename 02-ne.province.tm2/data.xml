@@ -6,6 +6,7 @@
   <Parameter name="center">0,0,3</Parameter>
   <Parameter name="format">pbf</Parameter>
   <Parameter name="geocoder_layer"><![CDATA[data._text]]></Parameter>
+  <Parameter name="geocoder_resolution">2</Parameter>
   <Parameter name="json"><![CDATA[{"vector_layers":[{"id":"data","description":"","minzoom":0,"maxzoom":22,"fields":{"_id":"Number","name":"String","_text":"String","lon":"Number","lat":"Number","bounds":"String","area":"Number"}}]}]]></Parameter>
   <Parameter name="maxzoom">6</Parameter>
   <Parameter name="minzoom">0</Parameter>

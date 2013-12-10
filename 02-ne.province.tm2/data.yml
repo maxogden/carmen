@@ -2,6 +2,7 @@ _prefs:
   disabled: []
   inspector: false
   saveCenter: false
+  scheme: pyramid
 attribution: ''
 center: 
   - 0
@@ -9,6 +10,7 @@ center:
   - 3
 description: ''
 geocoder_layer: data._text
+geocoder_resolution: 2
 Layer: 
   - id: data
     Datasource: 
@@ -39,5 +41,5 @@ Layer:
     srs: +proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs
 maxzoom: 6
 minzoom: 0
-mtime: 1386560812366
+mtime: 1386667798078
 name: ne-province

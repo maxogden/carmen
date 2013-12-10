@@ -3,9 +3,10 @@
 <Map srs="+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0.0 +k=1.0 +units=m +nadgrids=@null +wktext +no_defs +over" maximum-extent="-20037508.34,-20037508.34,20037508.34,20037508.34">
 
 <Parameters>
-  <Parameter name="center">-119.13574218749999,39.80853604144591,4</Parameter>
+  <Parameter name="center">-119.13574218749999,39.80853604144591,6</Parameter>
   <Parameter name="format">pbf</Parameter>
   <Parameter name="geocoder_layer"><![CDATA[data._text]]></Parameter>
+  <Parameter name="geocoder_resolution">3</Parameter>
   <Parameter name="json"><![CDATA[{"vector_layers":[{"id":"data","description":"","minzoom":0,"maxzoom":22,"fields":{"_id":"Number","_text":"String","name":"String","lon":"Number","lat":"Number","bounds":"String"}}]}]]></Parameter>
   <Parameter name="maxzoom">9</Parameter>
   <Parameter name="minzoom">6</Parameter>
