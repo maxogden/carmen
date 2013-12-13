@@ -7,7 +7,7 @@
   <Parameter name="format">pbf</Parameter>
   <Parameter name="geocoder_layer"><![CDATA[data._text]]></Parameter>
   <Parameter name="geocoder_resolution">2</Parameter>
-  <Parameter name="json"><![CDATA[{"vector_layers":[{"id":"data","description":"","minzoom":0,"maxzoom":22,"fields":{"_id":"Number","name":"String","_text":"String","lon":"Number","lat":"Number","bounds":"String","area":"Number"}}]}]]></Parameter>
+  <Parameter name="json"><![CDATA[{"vector_layers":[{"id":"data","description":"","minzoom":0,"maxzoom":22,"fields":{"_id":"Number","_text":"String","_center":"String","_score":"Number","name":"String","area":"Number"}}]}]]></Parameter>
   <Parameter name="maxzoom">6</Parameter>
   <Parameter name="minzoom">0</Parameter>
   <Parameter name="name"><![CDATA[ne-province]]></Parameter>
@@ -29,7 +29,15 @@
        <Parameter name="key_field"><![CDATA[_id]]></Parameter>
        <Parameter name="max_size"><![CDATA[512]]></Parameter>
        <Parameter name="port"><![CDATA[]]></Parameter>
-       <Parameter name="table"><![CDATA[(select * from data) as data]]></Parameter>
+       <Parameter name="table"><![CDATA[(select
+  geometry,
+  _id,
+  _text,
+  lon||','||lat as _center,
+  area as _score,
+  name,
+  area
+from data) as data]]></Parameter>
        <Parameter name="type"><![CDATA[postgis]]></Parameter>
        <Parameter name="user"><![CDATA[postgres]]></Parameter>
     </Datasource>

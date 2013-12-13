@@ -22,17 +22,25 @@ Layer:
       key_field: _id
       max_size: 512
       port: ''
-      table: (select * from data) as data
+      table: |-
+        (select
+          geometry,
+          _id,
+          _text,
+          lon||','||lat as _center,
+          area as _score,
+          name,
+          area
+        from data) as data
       type: postgis
       user: postgres
     description: ''
     fields: 
+      _center: String
       _id: Number
+      _score: Number
       _text: String
       area: Number
-      bounds: String
-      lat: Number
-      lon: Number
       name: String
     properties: 
       "buffer-size": 4
@@ -41,5 +49,5 @@ Layer:
     srs: +proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs
 maxzoom: 6
 minzoom: 0
-mtime: 1386667798078
+mtime: 1386932502126
 name: ne-province
