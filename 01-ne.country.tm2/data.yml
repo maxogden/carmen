@@ -1,14 +1,16 @@
 _prefs: 
   disabled: []
   inspector: data
-  saveCenter: true
+  saveCenter: false
+  scheme: ''
 attribution: ''
 center: 
-  - -93.55957031249999
-  - 43.59630591596548
-  - 5
+  - 0
+  - 0
+  - 3
 description: ''
 geocoder_layer: data._text
+geocoder_resolution: 0
 Layer: 
   - id: data
     Datasource: 
@@ -20,17 +22,24 @@ Layer:
       key_field: _id
       max_size: 512
       port: ''
-      table: (select * from data) as data
+      table: |-
+        (select
+          geometry,
+          _id,
+          _text,
+          lon||','||lat as _center,
+          name,
+          iso2,
+          population
+        from data) as data
       type: postgis
       user: postgres
     description: ''
     fields: 
+      _center: String
       _id: Number
       _text: String
-      bounds: String
       iso2: String
-      lat: Number
-      lon: Number
       name: String
       population: Number
     properties: 
@@ -40,5 +49,5 @@ Layer:
     srs: +proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs
 maxzoom: 6
 minzoom: 0
-mtime: 1386267702624
+mtime: 1386931480613
 name: ne-country
