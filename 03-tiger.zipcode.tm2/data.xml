@@ -7,7 +7,7 @@
   <Parameter name="format">pbf</Parameter>
   <Parameter name="geocoder_layer"><![CDATA[data._text]]></Parameter>
   <Parameter name="geocoder_resolution">3</Parameter>
-  <Parameter name="json"><![CDATA[{"vector_layers":[{"id":"data","description":"","minzoom":0,"maxzoom":22,"fields":{"_id":"Number","_text":"String","_center":"String","name":"String"}}]}]]></Parameter>
+  <Parameter name="json"><![CDATA[{"vector_layers":[{"id":"data","description":"","minzoom":0,"maxzoom":22,"fields":{"_id":"Number","_text":"String","_center":"String","title":"String"}}]}]]></Parameter>
   <Parameter name="maxzoom">9</Parameter>
   <Parameter name="minzoom">6</Parameter>
   <Parameter name="name"><![CDATA[tiger-zipcode]]></Parameter>
@@ -33,8 +33,8 @@
 	wkb_geometry,
  	_id,
  	_text,
-    lon||','||lat as _center,
- 	name
+    to_char(lon,'FM990.999990')||','||to_char(lat,'FM990.999990') as _center,
+ 	name as title
 from data) as data]]></Parameter>
        <Parameter name="type"><![CDATA[postgis]]></Parameter>
        <Parameter name="user"><![CDATA[postgres]]></Parameter>

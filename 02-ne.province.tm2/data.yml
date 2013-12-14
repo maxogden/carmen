@@ -1,6 +1,6 @@
 _prefs: 
   disabled: []
-  inspector: false
+  inspector: data
   saveCenter: false
   scheme: pyramid
 attribution: ''
@@ -27,10 +27,10 @@ Layer:
           geometry,
           _id,
           _text,
-          lon||','||lat as _center,
+          to_char(lon,'FM990.999990')||','||to_char(lat,'FM990.999990') as _center,
           area as _score,
-          name,
-          area
+          name as title,
+          round(area) as area
         from data) as data
       type: postgis
       user: postgres
@@ -41,7 +41,7 @@ Layer:
       _score: Number
       _text: String
       area: Number
-      name: String
+      title: String
     properties: 
       "buffer-size": 4
       maxzoom: 22
@@ -49,5 +49,5 @@ Layer:
     srs: +proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs
 maxzoom: 6
 minzoom: 0
-mtime: 1386932502126
+mtime: 1387001826500
 name: ne-province
