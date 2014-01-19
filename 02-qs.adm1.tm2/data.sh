@@ -1,44 +1,50 @@
 #!/bin/bash
 set -e -u
 
-echo "setting up..."
-TMP=`mktemp -d tmpXXXX`
-createdb -U postgres -T template_postgis $TMP
-psql -U postgres -d $TMP -f wrapx.sql
-echo "downloading..."
-curl -sfo $TMP/qs_adm1.zip http://static.quattroshapes.com/qs_adm1.zip
-unzip -q $TMP/qs_adm1.zip -d $TMP
-echo "importing..."
-ogr2ogr \
-	-nlt MULTIPOLYGON \
-	-nln import \
-	-f "PostgreSQL" PG:"host=localhost user=postgres dbname=$TMP" \
-	$TMP/qs_adm1.shp
+TMP="$(dirname $0)/tmp"
+mkdir -p $TMP
 
-echo "cleaning..."
+if [ $(psql -U postgres -l | grep carmen_qs_adm1 | wc -l) != "0" ]; then
+  echo "+ carmen_qs_adm1 (noop)"
+  exit 0
+fi
+
+# Download qs_adm1 shapefile.
+if [ ! -f $TMP/qs_adm1.shp ]; then
+  curl -sfo $TMP/qs_adm1.zip http://static.quattroshapes.com/qs_adm1.zip
+  unzip -d $TMP -q $TMP/qs_adm1.zip
+fi
+
+if [ ! -f $TMP/10m-admin-1-states-provinces-shp.shp ]; then
+  curl -sfo $TMP/10m-admin-1-states-provinces-shp.zip http://mapbox-geodata.s3.amazonaws.com/natural-earth-1.4.0/cultural/10m-admin-1-states-provinces-shp.zip
+  unzip -q $TMP/10m-admin-1-states-provinces-shp.zip -d $TMP
+fi
+
+createdb -U postgres -T template_postgis carmen_qs_adm1
+
+ogr2ogr -nlt MULTIPOLYGON -nln tmpdata -f "PostgreSQL" PG:"host=localhost user=postgres dbname=carmen_qs_adm1" $TMP/qs_adm1.shp
+
+ogr2ogr --config SHAPE_ENCODING UTF-8 -nlt MULTIPOLYGON -nln ne -f "PostgreSQL" PG:"host=localhost user=postgres dbname=carmen_qs_adm1" $TMP/10m-admin-1-states-provinces-shp.shp
+
+psql -U postgres carmen_qs_adm1 < wrapx.sql
+
 echo "
-CREATE TABLE data(id SERIAL PRIMARY KEY, name VARCHAR, geometry GEOMETRY(Geometry, 4326), search VARCHAR, lon FLOAT, lat FLOAT, bounds VARCHAR, area FLOAT);
-INSERT INTO data (id, geometry, name, search)
-	SELECT ogc_fid, st_setsrid(st_wrapx(wkb_geometry, 180, -180),4326), qs_a1 AS name, coalesce(qs_a1||','||qs_a1_alt, qs_a1) AS search FROM import;
-UPDATE data SET
-    lon = st_x(st_pointonsurface(geometry)),
-    lat = st_y(st_pointonsurface(geometry)),
-    bounds = st_xmin(geometry)||','||st_ymin(geometry)||','||st_xmax(geometry)||','||st_ymax(geometry);
+CREATE TABLE data(id BIGINT PRIMARY KEY, handle TEXT, text TEXT, area FLOAT, center Geometry(Geometry,900913), geometry Geometry(Geometry,900913));
+CREATE INDEX data_geometry ON data USING GIST(geometry);
+CREATE INDEX data_center ON data USING GIST(center);
+INSERT INTO data (id, handle, text, geometry) SELECT
+    ('x'||substr(md5(qs_adm0_a3||'-'||coalesce(qs_a1_lc,qs_a1,'')),0,9))::bit(32)::bigint AS id,
+    max(qs_adm0_a3||'-'||coalesce(qs_a1_lc,qs_a1,'')) AS handle,
+    max(qs_a1||coalesce(','||n.postal,'')) AS text,
+    st_collect(st_transform(st_wrapx(t.wkb_geometry,180,-180),900913)) AS geometry
+    FROM tmpdata t
+    LEFT JOIN ne n ON t.qs_adm0_a3||'-'||qs_a1 = n.adm0_a3||'-'||name_1
+    -- exclude antarctica for now which has a geometry beyond 900913 extents.
+    WHERE qs_adm0_a3 <> 'ATA'
+    GROUP BY id;
+UPDATE data SET center = st_pointonsurface(st_buffer(geometry,0));
 UPDATE data SET area = 0;
-UPDATE data SET area = st_area(st_geogfromwkb(geometry)) where st_within(geometry,st_geomfromtext('POLYGON((-180 -90, -180 90, 180 90, 180 -90, -180 -90))',4326));
-" | psql -U postgres $TMP
+UPDATE data SET area = st_area(st_geogfromwkb(st_transform(geometry,4326)));
+-- where st_within(geometry,st_geomfromtext('POLYGON((-20037508.34 -20037508.34, -20037508.34 20037508.34, 20037508.34 20037508.34, 20037508.34 -20037508.34, -20037508.34 -20037508.34))',900913));
+" | psql -U postgres carmen_qs_adm1 
 
-echo "exporting..."
-ogr2ogr \
-	-s_srs EPSG:4326 \
-	-t_srs EPSG:900913 \
-	-wrapdateline \
-	-f "SQLite" \
-	-nln data \
-	qs-adm1.sqlite \
-	PG:"host=localhost user=postgres dbname=$TMP" data
-echo "cleaning up..."
-dropdb -U postgres $TMP
-rm -rf $TMP
-
-echo "Written to qs-adm1.sqlite."
