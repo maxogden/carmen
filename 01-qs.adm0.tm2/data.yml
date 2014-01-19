@@ -1,16 +1,19 @@
 _prefs: 
   disabled: []
-  inspector: false
+  inspector: data
   saveCenter: false
+  scheme: ''
 attribution: ''
 center: 
   - 0
   - 0
   - 3
 description: ''
-Layer:
+geocoder_layer: data._text
+geocoder_resolution: 0
+Layer: 
   - id: data
-    Datasource:
+    Datasource: 
       dbname: carmen_qs_adm0
       extent: -20037508.34,-20037508.34,20037508.34,20037508.34
       geometry_field: geometry
@@ -31,17 +34,17 @@ Layer:
       type: postgis
       user: postgres
     description: ''
-    fields:
+    fields: 
       _center: String
       _id: Number
       _text: String
       title: String
-    properties:
+    properties: 
       "buffer-size": 4
       maxzoom: 22
       minzoom: 0
     srs: +proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0.0 +k=1.0 +units=m +nadgrids=@null +wktext +no_defs +over
 maxzoom: 6
 minzoom: 0
-mtime: 1385065223564
+mtime: 1390099019721
 name: qs-adm0
