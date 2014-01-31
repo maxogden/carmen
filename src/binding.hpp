@@ -16,6 +16,7 @@
 #include <exception>
 #include <string>
 #include <map>
+#include <unordered_map>
 #include <vector>
 #include "index.pb.h"
 #pragma clang diagnostic pop
@@ -28,7 +29,7 @@ public:
     typedef uint64_t int_type;
     // lazy ref item
     typedef uint64_t offset_type;
-    typedef std::map<int_type,offset_type> larraycache;
+    typedef std::unordered_map<int_type,offset_type> larraycache;
     typedef std::map<std::string,larraycache> lazycache;
     typedef std::map<std::string,std::string> message_cache;
     // fully cached item
