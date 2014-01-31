@@ -67,12 +67,12 @@ describe('Cache', function() {
             it('#pack', function() {
                 var cache = new Cache('a', 1);
                 cache.set('term', 5, [0,1,2]);
-                assert.deepEqual(9, cache.pack('term', 0).length);
+                assert.deepEqual(11, cache.pack('term', 0).length);
                 // set should replace data
                 cache.set('term', 5, [0,1,2,4]);
-                assert.deepEqual(10, cache.pack('term', 0).length);
+                assert.deepEqual(12, cache.pack('term', 0).length);
                 cache.set('term', 5, []);
-                assert.deepEqual(4, cache.pack('term', 0).length);
+                assert.deepEqual(6, cache.pack('term', 0).length);
                 // now test packing data created via load
                 var packer = new Cache('a', 1);
                 var array = [];
@@ -83,7 +83,7 @@ describe('Cache', function() {
                 var loader = new Cache('a', 1);
                 loader.load(packer.pack('term',0), 'term', 0);
                 // grab data right back out
-                assert.deepEqual(10008, loader.pack('term', 0).length);
+                assert.deepEqual(10010, loader.pack('term', 0).length);
                 // try to grab data that does not exist
                 assert.throws(function() { loader.pack('term', 99999999999999) });
             });

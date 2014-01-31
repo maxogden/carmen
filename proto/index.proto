@@ -10,5 +10,6 @@ message object {
         repeated int64 val = 2 [ packed = true ];
     }
 
-    repeated item items = 1;
+    required int64 item_count = 1;
+    repeated item items = 2;
 }

@@ -6,6 +6,7 @@
 #include "pbf.hpp"
 
 #include <sstream>
+#include <iostream>
 
 namespace binding {
 
@@ -60,8 +61,10 @@ NAN_METHOD(Cache::pack)
         Cache::memcache const& mem = c->cache_;
         Cache::memcache::const_iterator itr = mem.find(key);
         carmen::proto::object message;
+        uint64_t total_items = 0;
         if (itr != mem.end()) {
             for (auto item : itr->second) {
+                ++total_items;
                 ::carmen::proto::object_item * new_item = message.add_items(); 
                 new_item->set_key(item.first);
                 Cache::intarray const & varr = item.second;
@@ -80,6 +83,7 @@ NAN_METHOD(Cache::pack)
                     throw std::runtime_error("misuse");
                 }
                 for (auto item : litr->second) {
+                    ++total_items;
                     ::carmen::proto::object_item * new_item = message.add_items();
                     new_item->set_key(static_cast<int64_t>(item.first));
                     unsigned start = (item.second & 0xffffffff);
@@ -107,6 +111,7 @@ NAN_METHOD(Cache::pack)
                 return NanThrowTypeError("pack: cannot pack empty data");
             }
         }
+        message.set_item_count(total_items);
         int size = message.ByteSize();
         if (size > 0)
         {
@@ -246,6 +251,8 @@ void load_into_cache(Cache::larraycache & larrc,
     protobuf::message message(data,size);
     while (message.next()) {
         if (message.tag == 1) {
+            larrc.reserve(message.varint());
+        } else if (message.tag == 2) {
             uint64_t len = message.varint();
             protobuf::message buffer(message.getData(), static_cast<std::size_t>(len));
             while (buffer.next()) {
