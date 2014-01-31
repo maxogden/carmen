@@ -6,12 +6,16 @@
 #include "pbf.hpp"
 
 #include <sstream>
+#include <limits>
 
 namespace binding {
 
 using namespace v8;
 
 Persistent<FunctionTemplate> Cache::constructor;
+
+// sparsehash reserved key for deletions: (1 << 64) - 1
+const Cache::int_type Cache::deleted_key = (std::numeric_limits<int_type>::max() - 1);
 
 void Cache::Initialize(Handle<Object> target) {
     NanScope();
@@ -35,8 +39,8 @@ Cache::Cache(std::string const& id, unsigned shardlevel)
     id_(id),
     shardlevel_(shardlevel),
     cache_(),
-    lazy_()
-    { }
+    lazy_(),
+    msg_() { }
 
 Cache::~Cache() { }
 
@@ -243,6 +247,7 @@ NAN_METHOD(Cache::_set)
 void load_into_cache(Cache::larraycache & larrc,
                             const char * data,
                             size_t size) {
+    larrc.set_deleted_key(Cache::deleted_key);
     protobuf::message message(data,size);
     while (message.next()) {
         if (message.tag == 1) {
@@ -252,13 +257,12 @@ void load_into_cache(Cache::larraycache & larrc,
                 if (buffer.tag == 1) {
                     uint64_t key_id = buffer.varint();
                     size_t start = static_cast<size_t>(message.getData() - data);
-                    // insert here because:
-                    //  - libstdc++ does not support std::map::emplace
-                    //  - larrc.emplace(buffer.varint(),Cache::string_ref_type(message.getData(),len)) was not faster on OS X
                     Cache::offset_type offsets = (((Cache::offset_type)len << 32)) | (((Cache::offset_type)start) & 0xffffffff);
                     larrc.insert(std::make_pair(key_id,offsets));
                 }
                 // it is safe to break immediately because tag 1 should come first
+                // it would also be safe to not use `while (buffer.next())` here, but we do it
+                // because I've not seen a performance cost (dane/osx) and being explicit is good
                 break;
             }
             message.skipBytes(len);

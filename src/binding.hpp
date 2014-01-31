@@ -29,6 +29,7 @@ public:
     typedef uint64_t int_type;
     // lazy ref item
     typedef uint64_t offset_type;
+    static const int_type deleted_key;
     typedef google::sparse_hash_map<int_type,offset_type> larraycache;
     typedef std::map<std::string,larraycache> lazycache;
     typedef std::map<std::string,std::string> message_cache;
